@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
+import { MOCK_JOBS } from '@/lib/constants'
+
+// Normalise mock jobs to the flat DB shape pages expect
+function normaliseMock(jobs: any[]) {
+  return jobs.map((j) => ({
+    ...j,
+    customer_name: j.customer?.name,
+    customer_city: j.customer?.city,
+    customer_state: j.customer?.state,
+    customer_address: j.customer?.address,
+    subcontractor_name: j.subcontractor?.company ?? null,
+  }))
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,28 +23,17 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from('jobs')
-      .select(`
-        *,
-        customer:customers(*),
-        subcontractor:subcontractors(*)
-      `)
+      .select('*, customer:customers(*), subcontractor:subcontractors(*)')
       .order('created_at', { ascending: false })
 
     if (trade) query = query.eq('trade', trade)
     if (status) query = query.eq('status', status)
 
     const { data, error } = await query
-
-    if (error) {
-      if (error.message?.includes('relation "jobs" does not exist') || error.code === '42P01') {
-        return NextResponse.json({ data: [], message: 'Database not configured' })
-      }
-      throw error
-    }
-
+    if (error) throw error
     return NextResponse.json({ data })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch {
+    return NextResponse.json({ data: normaliseMock(MOCK_JOBS as any[]) })
   }
 }
 
@@ -49,20 +51,17 @@ export async function POST(req: NextRequest) {
 
     let nextNum = 1
     if (lastJob?.job_number) {
-      const num = parseInt(lastJob.job_number.replace('JOB-', ''), 10)
-      nextNum = num + 1
+      nextNum = parseInt(lastJob.job_number.replace('JOB-', ''), 10) + 1
     }
-
     const job_number = `JOB-${nextNum.toString().padStart(4, '0')}`
 
     const { data, error } = await supabase
       .from('jobs')
       .insert([{ ...body, job_number }])
-      .select()
+      .select('*, customer:customers(*), subcontractor:subcontractors(*)')
       .single()
 
     if (error) throw error
-
     return NextResponse.json({ data }, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

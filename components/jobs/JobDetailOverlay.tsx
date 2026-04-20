@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, ExternalLink, Save, Star } from 'lucide-react'
+import { X, ExternalLink, Save, RefreshCw } from 'lucide-react'
 import StatusPill from '@/components/ui/StatusPill'
 import DocLinks from '@/components/ui/DocLinks'
 
@@ -12,9 +12,10 @@ interface JobDetailOverlayProps {
   job: any
   onClose: () => void
   onSave?: (updated: any) => void
+  saving?: boolean
 }
 
-export default function JobDetailOverlay({ job, onClose, onSave }: JobDetailOverlayProps) {
+export default function JobDetailOverlay({ job, onClose, onSave, saving }: JobDetailOverlayProps) {
   const [form, setForm] = useState({
     status: job.status || 'lead',
     trade: job.trade || 'roofing',
@@ -225,10 +226,10 @@ export default function JobDetailOverlay({ job, onClose, onSave }: JobDetailOver
         <div className="sticky bottom-0 px-5 py-3 bg-[#0f0f12] border-t border-[#2a2a32] flex gap-3">
           <button
             onClick={() => onSave?.(form)}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#c8922a] hover:bg-[#e8aa40] rounded-md font-nav text-sm font-semibold text-[#09090b] transition-colors"
+            disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#c8922a] hover:bg-[#e8aa40] rounded-md font-nav text-sm font-semibold text-[#09090b] transition-colors disabled:opacity-60"
           >
-            <Save size={14} />
-            Save Changes
+            {saving ? <><RefreshCw size={14} className="animate-spin" /> Saving...</> : <><Save size={14} /> Save Changes</>}
           </button>
           <button
             onClick={onClose}

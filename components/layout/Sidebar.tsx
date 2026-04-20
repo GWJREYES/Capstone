@@ -117,7 +117,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     </div>
   )
 
-  // Mobile overlay
+  // Mobile overlay only — desktop is rendered separately in SidebarWrapper
   if (typeof open !== 'undefined') {
     return (
       <>
@@ -134,7 +134,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         >
           {content}
         </div>
-        <div className="hidden lg:flex">{content}</div>
       </>
     )
   }

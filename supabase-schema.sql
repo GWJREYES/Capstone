@@ -1,11 +1,10 @@
 -- CAPSTONE Field Operations Platform
--- Supabase Schema
+-- Safe to re-run: uses IF NOT EXISTS on all tables
 
--- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
 -- Customers
-create table customers (
+create table if not exists customers (
   id uuid primary key default uuid_generate_v4(),
   name text not null,
   address text,
@@ -19,7 +18,7 @@ create table customers (
 );
 
 -- Subcontractors
-create table subcontractors (
+create table if not exists subcontractors (
   id uuid primary key default uuid_generate_v4(),
   company text not null,
   contact_name text,
@@ -37,7 +36,7 @@ create table subcontractors (
 );
 
 -- Jobs
-create table jobs (
+create table if not exists jobs (
   id uuid primary key default uuid_generate_v4(),
   job_number text unique not null,
   customer_id uuid references customers(id),
@@ -59,7 +58,7 @@ create table jobs (
 );
 
 -- Quotes
-create table quotes (
+create table if not exists quotes (
   id uuid primary key default uuid_generate_v4(),
   job_id uuid references jobs(id),
   customer_id uuid references customers(id),
@@ -80,7 +79,7 @@ create table quotes (
 );
 
 -- Quote Line Items
-create table quote_line_items (
+create table if not exists quote_line_items (
   id uuid primary key default uuid_generate_v4(),
   quote_id uuid references quotes(id) on delete cascade,
   description text not null,
@@ -94,7 +93,7 @@ create table quote_line_items (
 );
 
 -- Payments
-create table payments (
+create table if not exists payments (
   id uuid primary key default uuid_generate_v4(),
   job_id uuid references jobs(id),
   customer_id uuid references customers(id),
@@ -109,7 +108,7 @@ create table payments (
 );
 
 -- Inspections
-create table inspections (
+create table if not exists inspections (
   id uuid primary key default uuid_generate_v4(),
   job_id uuid references jobs(id),
   inspector_name text,
@@ -123,14 +122,27 @@ create table inspections (
   created_at timestamptz default now()
 );
 
--- Row Level Security (enable for production)
--- alter table jobs enable row level security;
--- alter table customers enable row level security;
--- alter table subcontractors enable row level security;
--- alter table quotes enable row level security;
--- alter table payments enable row level security;
+-- Audit Records
+create table if not exists audit_records (
+  id uuid primary key default uuid_generate_v4(),
+  job_id text,
+  customer text,
+  tech_name text,
+  rilla_score int check (rilla_score between 0 and 100),
+  talk_ratio int,
+  open_questions int,
+  duration_minutes int,
+  outcome text,
+  rilla_reviewed boolean default false,
+  matterport_complete boolean default false,
+  go3s_uploaded boolean default false,
+  follow_up_sent boolean default false,
+  quote_generated boolean default false,
+  coaching_note text,
+  created_at timestamptz default now()
+);
 
--- Updated_at trigger
+-- updated_at trigger (safe to re-run)
 create or replace function update_updated_at()
 returns trigger as $$
 begin
@@ -139,8 +151,10 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists jobs_updated_at on jobs;
 create trigger jobs_updated_at before update on jobs
   for each row execute procedure update_updated_at();
 
+drop trigger if exists quotes_updated_at on quotes;
 create trigger quotes_updated_at before update on quotes
   for each row execute procedure update_updated_at();

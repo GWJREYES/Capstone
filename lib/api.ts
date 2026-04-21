@@ -2,7 +2,6 @@
 // Falls back to mock data when Supabase is not configured.
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { MOCK_JOBS, MOCK_SUBS, MOCK_CUSTOMERS } from './constants'
 
 let _client: SupabaseClient | null = null
 
@@ -53,20 +52,16 @@ async function nextQuoteNumber(supabase: SupabaseClient): Promise<string> {
 // ─── Jobs ────────────────────────────────────────────────────────────────────
 
 export async function fetchJobs(params?: { trade?: string; status?: string }) {
-  try {
-    const supabase = getClient()
-    let query = supabase
-      .from('jobs')
-      .select('*, customer:customers(*), subcontractor:subcontractors(*)')
-      .order('created_at', { ascending: false })
-    if (params?.trade) query = query.eq('trade', params.trade)
-    if (params?.status) query = query.eq('status', params.status)
-    const { data, error } = await query
-    if (error) throw error
-    return data || []
-  } catch {
-    return MOCK_JOBS as any[]
-  }
+  const supabase = getClient()
+  let query = supabase
+    .from('jobs')
+    .select('*, customer:customers(*), subcontractor:subcontractors(*)')
+    .order('created_at', { ascending: false })
+  if (params?.trade) query = query.eq('trade', params.trade)
+  if (params?.status) query = query.eq('status', params.status)
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
 }
 
 export async function createJob(body: Record<string, any>) {
@@ -106,17 +101,13 @@ export async function deleteJob(id: string) {
 // ─── Subcontractors ──────────────────────────────────────────────────────────
 
 export async function fetchSubs() {
-  try {
-    const supabase = getClient()
-    const { data, error } = await supabase
-      .from('subcontractors')
-      .select('*')
-      .order('company')
-    if (error) throw error
-    return data || []
-  } catch {
-    return MOCK_SUBS as any[]
-  }
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('subcontractors')
+    .select('*')
+    .order('company')
+  if (error) throw error
+  return data || []
 }
 
 export async function createSub(body: Record<string, any>) {
@@ -145,17 +136,13 @@ export async function updateSub(id: string, body: Record<string, any>) {
 // ─── Customers ───────────────────────────────────────────────────────────────
 
 export async function fetchCustomers() {
-  try {
-    const supabase = getClient()
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .order('name')
-    if (error) throw error
-    return data || []
-  } catch {
-    return MOCK_CUSTOMERS as any[]
-  }
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('customers')
+    .select('*')
+    .order('name')
+  if (error) throw error
+  return data || []
 }
 
 export async function createCustomer(body: Record<string, any>) {

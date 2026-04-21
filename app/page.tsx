@@ -6,17 +6,8 @@ import StatBlock from '@/components/ui/StatBlock'
 import StatusPill from '@/components/ui/StatusPill'
 import DocLinks from '@/components/ui/DocLinks'
 import JobDetailOverlay from '@/components/jobs/JobDetailOverlay'
-import { fetchJobs, updateJob } from '@/lib/api'
+import { fetchJobs, fetchSubs, updateJob } from '@/lib/api'
 import { PIPELINE_STAGES } from '@/lib/constants'
-
-const SUBS_AVAIL = [
-  { company: 'Peak Roofing LLC', trade: 'roofing', status: 'available' },
-  { company: 'Deep Dig Foundation', trade: 'foundation', status: 'busy' },
-  { company: 'Premier Interiors', trade: 'remodel', status: 'available' },
-  { company: 'SolidForm Concrete', trade: 'concrete', status: 'available' },
-  { company: 'New England Frame Co.', trade: 'framing', status: 'unavailable' },
-  { company: 'ClearView Windows', trade: 'windows', status: 'busy' },
-]
 
 const DOT: Record<string, string> = { available: '#3eb85a', busy: '#d4880a', unavailable: '#606070' }
 
@@ -59,17 +50,18 @@ function pipelineValue(jobs: any[]) {
 
 export default function Dashboard() {
   const [jobs, setJobs] = useState<any[]>([])
+  const [subs, setSubs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedJob, setSelectedJob] = useState<any>(null)
 
   const load = async () => {
     setLoading(true)
     try {
-      const data = await fetchJobs()
-      setJobs(data)
-    } finally {
-      setLoading(false)
-    }
+      const [jobData, subData] = await Promise.all([fetchJobs(), fetchSubs()])
+      setJobs(jobData)
+      setSubs(subData)
+    } catch { /* Supabase not yet configured */ }
+    finally { setLoading(false) }
   }
 
   useEffect(() => { load() }, [])
@@ -257,14 +249,16 @@ export default function Dashboard() {
                 <h2 className="font-display text-base tracking-wider text-[#e8e8ee]">SUBS AVAILABILITY</h2>
               </div>
               <div className="divide-y divide-[#2a2a32]/50">
-                {SUBS_AVAIL.map((sub) => (
-                  <div key={sub.company} className="px-4 py-2.5 flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: DOT[sub.status] }} />
+                {subs.length === 0 ? (
+                  <p className="px-4 py-4 font-nav text-xs text-[#606070]">No subcontractors added yet. <a href="/subs" className="text-[#c8922a]">Add one →</a></p>
+                ) : subs.slice(0, 6).map((sub) => (
+                  <div key={sub.id} className="px-4 py-2.5 flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: DOT[sub.status] || DOT.unavailable }} />
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-xs text-[#e8e8ee] truncate">{sub.company}</p>
                       <p className="font-nav text-[10px] text-[#606070] capitalize">{sub.trade}</p>
                     </div>
-                    <span className="font-nav text-[10px] capitalize" style={{ color: DOT[sub.status] }}>{sub.status}</span>
+                    <span className="font-nav text-[10px] capitalize" style={{ color: DOT[sub.status] || DOT.unavailable }}>{sub.status}</span>
                   </div>
                 ))}
               </div>

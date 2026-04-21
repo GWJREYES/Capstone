@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CreditCard, ExternalLink, CheckCircle, Clock, AlertCircle, RefreshCw, Check } from 'lucide-react'
-import { fetchPayments, markPaymentPaid, fetchJobs, updateJob } from '@/lib/api'
+import { CreditCard, ExternalLink, CheckCircle, Clock, AlertCircle, RefreshCw, Check, Archive } from 'lucide-react'
+import { fetchPayments, markPaymentPaid, fetchJobs, updateJob, archiveCustomer } from '@/lib/api'
 import JobDetailOverlay from '@/components/jobs/JobDetailOverlay'
 
 const STATUS_CFG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
@@ -25,6 +25,7 @@ export default function PaymentsPage() {
   const [markingId, setMarkingId] = useState<string | null>(null)
   const [selectedJob, setSelectedJob] = useState<any>(null)
   const [savingJob, setSavingJob] = useState(false)
+  const [autoArchivedName, setAutoArchivedName] = useState<string | null>(null)
 
   const stripeConfigured = !!(
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
@@ -44,9 +45,27 @@ export default function PaymentsPage() {
   const handleMarkPaid = async (id: string) => {
     setMarkingId(id)
     try {
+      const payment = payments.find((p) => p.id === id)
       setPayments(payments.map((p) => p.id === id ? { ...p, status: 'paid', paid_date: new Date().toISOString().split('T')[0] } : p))
       const isReal = !/^\d+$/.test(id)
-      if (isReal) await markPaymentPaid(id)
+      if (isReal) {
+        await markPaymentPaid(id)
+        // Auto-archive customer when payment is collected on a completed job
+        if (payment) {
+          const jobId = payment.job_id || payment.job?.id
+          const customerId = payment.customer_id || payment.customer?.id
+          if (jobId && customerId) {
+            const job = jobs.find((j) => j.id === jobId)
+            if (job?.status === 'complete') {
+              try {
+                await archiveCustomer(customerId)
+                setAutoArchivedName(payment.customer?.name || 'Customer')
+                setTimeout(() => setAutoArchivedName(null), 6000)
+              } catch {}
+            }
+          }
+        }
+      }
     } finally { setMarkingId(null) }
   }
 
@@ -215,6 +234,15 @@ export default function PaymentsPage() {
           )}
         </div>
       </div>
+
+      {autoArchivedName && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-[#151518] border border-[#606070]/40 rounded-lg shadow-xl animate-slide-up">
+          <Archive size={14} className="text-[#606070]" />
+          <p className="font-nav text-sm text-[#9090a0]">
+            <span className="text-[#e8e8ee]">{autoArchivedName}</span> moved to archive
+          </p>
+        </div>
+      )}
 
       {selectedJob && (
         <JobDetailOverlay

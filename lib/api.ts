@@ -140,9 +140,45 @@ export async function fetchCustomers() {
   const { data, error } = await supabase
     .from('customers')
     .select('*')
+    .eq('archived', false)
     .order('name')
   if (error) throw error
   return data || []
+}
+
+export async function fetchArchivedCustomers() {
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('customers')
+    .select('*')
+    .eq('archived', true)
+    .order('archived_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+export async function archiveCustomer(id: string) {
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('customers')
+    .update({ archived: true, archived_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function unarchiveCustomer(id: string) {
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('customers')
+    .update({ archived: false, archived_at: null })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
 }
 
 export async function createCustomer(body: Record<string, any>) {

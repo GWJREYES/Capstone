@@ -1,16 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Search, X, RefreshCw } from 'lucide-react'
-import { fetchCustomers, createCustomer, updateCustomer } from '@/lib/api'
+import { Plus, Search, X, RefreshCw, Archive, RotateCcw } from 'lucide-react'
+import { fetchCustomers, fetchArchivedCustomers, createCustomer, updateCustomer, archiveCustomer, unarchiveCustomer } from '@/lib/api'
 
 const STATUS_COLORS: Record<string, string> = { active: '#3eb85a', inactive: '#606070', prospect: '#4a9de0' }
 const BLANK = { name: '', address: '', city: '', state: 'MA', zip: '', phone: '', email: '', status: 'prospect' }
 
+function fmtDate(iso: string) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([])
+  const [archived, setArchived] = useState<any[]>([])
+  const [tab, setTab] = useState<'active' | 'archived'>('active')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [archivingId, setArchivingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<Record<string, any>>(BLANK)
@@ -18,11 +26,16 @@ export default function CustomersPage() {
 
   const load = async () => {
     setLoading(true)
-    try { setCustomers(await fetchCustomers()) } finally { setLoading(false) }
+    try {
+      const [active, arch] = await Promise.all([fetchCustomers(), fetchArchivedCustomers()])
+      setCustomers(active)
+      setArchived(arch)
+    } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
 
-  const filtered = customers.filter((c) =>
+  const list = tab === 'active' ? customers : archived
+  const filtered = list.filter((c) =>
     !search || c.name?.toLowerCase().includes(search.toLowerCase()) ||
     c.city?.toLowerCase().includes(search.toLowerCase()) ||
     c.email?.toLowerCase().includes(search.toLowerCase())
@@ -51,6 +64,28 @@ export default function CustomersPage() {
     } finally { setSaving(false) }
   }
 
+  const handleArchive = async (c: any) => {
+    setArchivingId(c.id)
+    try {
+      await archiveCustomer(c.id)
+      setCustomers(customers.filter((x) => x.id !== c.id))
+      setArchived([{ ...c, archived: true, archived_at: new Date().toISOString() }, ...archived])
+    } catch (e: any) {
+      alert(`Archive failed: ${e.message}`)
+    } finally { setArchivingId(null) }
+  }
+
+  const handleRestore = async (c: any) => {
+    setArchivingId(c.id)
+    try {
+      const restored = await unarchiveCustomer(c.id)
+      setArchived(archived.filter((x) => x.id !== c.id))
+      setCustomers([...customers, restored].sort((a, b) => a.name.localeCompare(b.name)))
+    } catch (e: any) {
+      alert(`Restore failed: ${e.message}`)
+    } finally { setArchivingId(null) }
+  }
+
   const openEdit = (c: any) => { setForm({ ...c }); setEditId(c.id); setShowForm(true) }
   const fmt = (n: number) => `$${(n || 0).toLocaleString()}`
 
@@ -61,25 +96,46 @@ export default function CustomersPage() {
           <div>
             <h1 className="font-display text-3xl tracking-widest text-[#e8e8ee]">CUSTOMERS</h1>
             <p className="font-nav text-sm text-[#606070] mt-0.5">
-              {customers.length} customers · {fmt(customers.reduce((s, c) => s + (c.lifetime_value || 0), 0))} LTV
+              {customers.length} active · {archived.length} archived · {fmt(customers.reduce((s, c) => s + (c.lifetime_value || 0), 0))} LTV
             </p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={load} disabled={loading} className="p-2 rounded-md text-[#606070] hover:text-[#e8e8ee] hover:bg-[#151518]">
               <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             </button>
-            <button onClick={() => { setForm(BLANK); setEditId(null); setShowForm(true) }}
-              className="flex items-center gap-2 px-4 py-2 bg-[#c8922a] hover:bg-[#e8aa40] rounded-md font-nav text-sm font-semibold text-[#09090b] transition-colors">
-              <Plus size={16} /><span className="hidden sm:inline">Add Customer</span>
-            </button>
+            {tab === 'active' && (
+              <button onClick={() => { setForm(BLANK); setEditId(null); setShowForm(true) }}
+                className="flex items-center gap-2 px-4 py-2 bg-[#c8922a] hover:bg-[#e8aa40] rounded-md font-nav text-sm font-semibold text-[#09090b] transition-colors">
+                <Plus size={16} /><span className="hidden sm:inline">Add Customer</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="px-6 py-3 border-b border-[#2a2a32]">
-        <div className="relative max-w-xs">
+      {/* Tabs + Search */}
+      <div className="px-6 py-3 border-b border-[#2a2a32] flex flex-wrap items-center gap-3">
+        <div className="flex gap-1 bg-[#0f0f12] border border-[#2a2a32] p-1 rounded-lg">
+          <button onClick={() => setTab('active')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-nav text-xs font-semibold tracking-wide transition-all ${
+              tab === 'active' ? 'bg-[#c8922a] text-[#09090b]' : 'text-[#9090a0] hover:text-[#e8e8ee]'
+            }`}>
+            Active
+            <span className={`px-1.5 py-0.5 rounded text-[10px] ${tab === 'active' ? 'bg-[#09090b]/30' : 'bg-[#2a2a32]'}`}>{customers.length}</span>
+          </button>
+          <button onClick={() => setTab('archived')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-nav text-xs font-semibold tracking-wide transition-all ${
+              tab === 'archived' ? 'bg-[#606070] text-[#e8e8ee]' : 'text-[#9090a0] hover:text-[#e8e8ee]'
+            }`}>
+            <Archive size={11} />
+            Archived
+            <span className={`px-1.5 py-0.5 rounded text-[10px] ${tab === 'archived' ? 'bg-[#09090b]/20' : 'bg-[#2a2a32]'}`}>{archived.length}</span>
+          </button>
+        </div>
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#606070]" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search customers..."
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder={`Search ${tab} customers...`}
             className="w-full pl-9 pr-8 py-2 bg-[#151518] border border-[#2a2a32] rounded-md font-body text-sm text-[#e8e8ee] placeholder-[#606070] input-gold" />
           {search && <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#606070]"><X size={12} /></button>}
         </div>
@@ -97,13 +153,17 @@ export default function CustomersPage() {
                 <th className="text-left px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070] hidden lg:table-cell">Phone</th>
                 <th className="text-right px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070] hidden sm:table-cell">Jobs</th>
                 <th className="text-right px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070]">LTV</th>
-                <th className="text-left px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070]">Status</th>
+                <th className="text-left px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070]">
+                  {tab === 'active' ? 'Status' : 'Archived On'}
+                </th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((c) => (
-                <tr key={c.id} onClick={() => openEdit(c)} className="border-b border-[#2a2a32]/50 table-row-hover">
+                <tr key={c.id}
+                  onClick={() => tab === 'active' && openEdit(c)}
+                  className={`border-b border-[#2a2a32]/50 ${tab === 'active' ? 'table-row-hover' : 'cursor-default opacity-70'}`}>
                   <td className="px-4 py-3.5">
                     <p className="font-body text-sm text-[#e8e8ee]">{c.name}</p>
                     <p className="font-nav text-[11px] text-[#606070]">{c.email}</p>
@@ -116,19 +176,46 @@ export default function CustomersPage() {
                   <td className="px-4 py-3.5 text-right hidden sm:table-cell"><span className="font-mono text-sm text-[#4a9de0]">{c.jobs_count || 0}</span></td>
                   <td className="px-4 py-3.5 text-right"><span className="font-mono text-sm text-[#e8aa40]">{fmt(c.lifetime_value)}</span></td>
                   <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[c.status] }} />
-                      <span className="font-nav text-xs capitalize" style={{ color: STATUS_COLORS[c.status] }}>{c.status}</span>
-                    </div>
+                    {tab === 'active' ? (
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[c.status] }} />
+                        <span className="font-nav text-xs capitalize" style={{ color: STATUS_COLORS[c.status] }}>{c.status}</span>
+                      </div>
+                    ) : (
+                      <span className="font-nav text-xs text-[#606070]">{fmtDate(c.archived_at)}</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3.5 text-right">
-                    <button onClick={(e) => { e.stopPropagation(); openEdit(c) }} className="font-nav text-xs text-[#606070] hover:text-[#c8922a] transition-colors">Edit</button>
+                  <td className="px-4 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                    {tab === 'active' ? (
+                      <div className="flex items-center justify-end gap-3">
+                        <button onClick={() => openEdit(c)} className="font-nav text-xs text-[#606070] hover:text-[#c8922a] transition-colors">Edit</button>
+                        <button
+                          onClick={() => handleArchive(c)}
+                          disabled={archivingId === c.id}
+                          className="font-nav text-xs text-[#606070] hover:text-[#9090a0] transition-colors flex items-center gap-1 disabled:opacity-40">
+                          {archivingId === c.id ? <RefreshCw size={10} className="animate-spin" /> : <Archive size={10} />}
+                          Archive
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleRestore(c)}
+                        disabled={archivingId === c.id}
+                        className="font-nav text-xs text-[#4a9de0] hover:text-[#5ab0f5] transition-colors flex items-center gap-1 disabled:opacity-40">
+                        {archivingId === c.id ? <RefreshCw size={10} className="animate-spin" /> : <RotateCcw size={10} />}
+                        Restore
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {filtered.length === 0 && <p className="text-center py-10 font-nav text-sm text-[#606070]">No customers found.</p>}
+          {filtered.length === 0 && (
+            <p className="text-center py-10 font-nav text-sm text-[#606070]">
+              {tab === 'archived' ? 'No archived customers.' : 'No customers found.'}
+            </p>
+          )}
         </div>
       )}
 

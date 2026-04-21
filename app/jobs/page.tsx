@@ -84,7 +84,6 @@ export default function JobsPage() {
     setSaving(true)
     try {
       const payload = {
-        customer_name: newJob.customer_name,
         address: newJob.address,
         city: newJob.city,
         state: newJob.state,
@@ -102,22 +101,7 @@ export default function JobsPage() {
       setShowNewJob(false)
       setNewJob(BLANK_JOB)
     } catch (e: any) {
-      // Supabase not configured — add locally with temp id
-      const tempJob = {
-        id: `tmp-${Date.now()}`,
-        job_number: `JOB-${(jobs.length + 1).toString().padStart(4, '0')}`,
-        customer: { name: newJob.customer_name, address: newJob.address, city: newJob.city, state: newJob.state },
-        customer_name: newJob.customer_name, customer_city: newJob.city, customer_state: newJob.state,
-        trade: newJob.trade, status: newJob.status,
-        subcontractor: newJob.subcontractor_name ? { company: newJob.subcontractor_name } : null,
-        quoted_value: newJob.quoted_value ? parseFloat(newJob.quoted_value) : null,
-        notes: newJob.notes, matterport_url: newJob.matterport_url,
-        onedrive_url: newJob.onedrive_url, rilla_url: newJob.rilla_url,
-        rilla_score: null, audit_complete: false,
-      }
-      setJobs([tempJob, ...jobs])
-      setShowNewJob(false)
-      setNewJob(BLANK_JOB)
+      alert(`Failed to create job: ${e.message}`)
     } finally {
       setSaving(false)
     }

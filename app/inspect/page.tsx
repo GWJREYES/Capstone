@@ -95,7 +95,7 @@ export default function InspectPage() {
         checked: !!checked[`${activeTab}-${i}`],
       }))
       await createInspection({
-        job_id: jobId || null,
+        job_id: jobId.trim() || null,
         inspector_name: inspector,
         trade: activeTab.toLowerCase(),
         inspection_date: date,
@@ -177,7 +177,7 @@ export default function InspectPage() {
             </h3>
             <div className="space-y-3">
               {[
-                { key: 'jobId', label: 'Job ID', val: jobId, set: setJobId, type: 'text', placeholder: 'JOB-0001', mono: true },
+                { key: 'jobId', label: 'Job UUID (optional)', val: jobId, set: setJobId, type: 'text', placeholder: 'Paste job UUID to link', mono: true },
                 { key: 'inspector', label: 'Inspector Name', val: inspector, set: setInspector, type: 'text', placeholder: 'Full name', mono: false },
                 { key: 'date', label: 'Inspection Date', val: date, set: setDate, type: 'date', placeholder: '', mono: true },
               ].map(({ key, label, val, set, type, placeholder, mono }) => (

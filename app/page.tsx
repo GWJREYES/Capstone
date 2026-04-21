@@ -76,14 +76,26 @@ export default function Dashboard() {
 
   const handleSave = async (updated: any) => {
     if (!selectedJob) return
-    try {
-      if (selectedJob.id && !selectedJob.id.match(/^\d+$/)) {
-        // real UUID — persist to DB
-        await updateJob(selectedJob.id, updated)
+    // Optimistic update first so UI feels instant
+    setJobs(jobs.map((j) => j.id === selectedJob.id ? { ...j, ...updated } : j))
+    setSelectedJob(null)
+    const isReal = selectedJob.id && !/^\d+$/.test(selectedJob.id)
+    if (isReal) {
+      try {
+        await updateJob(selectedJob.id, {
+          status: updated.status,
+          trade: updated.trade,
+          quoted_value: updated.quoted_value ? parseFloat(updated.quoted_value) : null,
+          notes: updated.notes,
+          matterport_url: updated.matterport_url,
+          onedrive_url: updated.onedrive_url,
+          rilla_url: updated.rilla_url,
+        })
+      } catch (e: any) {
+        // Revert local state if DB save failed
+        setJobs(jobs.map((j) => j.id === selectedJob.id ? selectedJob : j))
+        alert(`Save failed: ${e.message}`)
       }
-      setJobs(jobs.map((j) => j.id === selectedJob.id ? { ...j, ...updated } : j))
-    } finally {
-      setSelectedJob(null)
     }
   }
 

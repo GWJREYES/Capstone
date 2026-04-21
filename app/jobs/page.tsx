@@ -5,20 +5,21 @@ import { Plus, Search, X, RefreshCw } from 'lucide-react'
 import StatusPill from '@/components/ui/StatusPill'
 import DocLinks from '@/components/ui/DocLinks'
 import JobDetailOverlay from '@/components/jobs/JobDetailOverlay'
-import { fetchJobs, createJob, updateJob } from '@/lib/api'
+import { fetchJobs, createJob, updateJob, fetchCustomers } from '@/lib/api'
 
 const TRADE_FILTERS = ['all', 'foundation', 'roofing', 'remodel', 'kitchen', 'concrete', 'framing', 'windows', 'siding']
 const STATUSES = ['lead', 'scheduled', 'inspected', 'quoted', 'sold', 'in_progress', 'complete', 'cancelled']
 const TRADES = ['foundation', 'roofing', 'remodel', 'kitchen', 'concrete', 'framing', 'windows', 'siding', 'exterior', 'hvac', 'plumbing', 'electrical']
 
 const BLANK_JOB = {
-  customer_name: '', address: '', city: '', state: 'MA', trade: 'roofing',
-  status: 'lead', subcontractor_name: '', quoted_value: '', notes: '',
+  customer_id: '', address: '', city: '', state: 'MA', trade: 'roofing',
+  status: 'lead', quoted_value: '', notes: '',
   matterport_url: '', onedrive_url: '', rilla_url: '',
 }
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<any[]>([])
+  const [customers, setCustomers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [selectedJob, setSelectedJob] = useState<any>(null)
@@ -32,7 +33,9 @@ export default function JobsPage() {
     setLoading(true)
     setError(null)
     try {
-      setJobs(await fetchJobs())
+      const [jobData, customerData] = await Promise.all([fetchJobs(), fetchCustomers()])
+      setJobs(jobData)
+      setCustomers(customerData)
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -83,10 +86,7 @@ export default function JobsPage() {
   const handleCreate = async () => {
     setSaving(true)
     try {
-      const payload = {
-        address: newJob.address,
-        city: newJob.city,
-        state: newJob.state,
+      const payload: Record<string, any> = {
         trade: newJob.trade,
         status: newJob.status,
         quoted_value: newJob.quoted_value ? parseFloat(newJob.quoted_value) : null,
@@ -96,6 +96,10 @@ export default function JobsPage() {
         rilla_url: newJob.rilla_url,
         audit_complete: false,
       }
+      if (newJob.customer_id) payload.customer_id = newJob.customer_id
+      if (newJob.address) payload.address = newJob.address
+      if (newJob.city) payload.city = newJob.city
+      if (newJob.state) payload.state = newJob.state
       const created = await createJob(payload)
       setJobs([created, ...jobs])
       setShowNewJob(false)
@@ -235,10 +239,25 @@ export default function JobsPage() {
                 </div>
               </div>
               <div>
-                <label className="font-nav text-[10px] tracking-wider uppercase text-[#606070] mb-1 block">Customer Name</label>
-                <input type="text" value={newJob.customer_name} onChange={(e) => setNewJob({ ...newJob, customer_name: e.target.value })}
-                  placeholder="e.g. Smith Residence"
-                  className="w-full bg-[#0f0f12] border border-[#2a2a32] rounded px-3 py-2 font-body text-sm text-[#e8e8ee] placeholder-[#606070] input-gold" />
+                <label className="font-nav text-[10px] tracking-wider uppercase text-[#606070] mb-1 block">Customer</label>
+                <select
+                  value={newJob.customer_id}
+                  onChange={(e) => {
+                    const cust = customers.find((c) => c.id === e.target.value)
+                    setNewJob({
+                      ...newJob,
+                      customer_id: e.target.value,
+                      address: cust?.address || '',
+                      city: cust?.city || '',
+                      state: cust?.state || 'MA',
+                    })
+                  }}
+                  className="w-full bg-[#0f0f12] border border-[#2a2a32] rounded px-3 py-2 font-body text-sm text-[#e8e8ee] input-gold">
+                  <option value="">— Select customer —</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}{c.city ? ` · ${c.city}` : ''}</option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">

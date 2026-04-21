@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FileText, RefreshCw, X, Trash2 } from 'lucide-react'
+import { FileText, RefreshCw, Trash2, Briefcase } from 'lucide-react'
 import StatusPill from '@/components/ui/StatusPill'
-import { fetchQuotes, updateQuote, deleteQuote } from '@/lib/api'
+import { fetchQuotes, updateQuote, deleteQuote, createJob } from '@/lib/api'
 
 const STATUS_ORDER = ['draft', 'sent', 'awaiting_signature', 'signed', 'declined']
 
@@ -12,6 +12,7 @@ export default function QuotesPage() {
   const [loading, setLoading] = useState(true)
   const [editId, setEditId] = useState<string | null>(null)
   const [editStatus, setEditStatus] = useState('')
+  const [convertingId, setConvertingId] = useState<string | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -33,6 +34,21 @@ export default function QuotesPage() {
     setQuotes(quotes.filter((q) => q.id !== id))
     const isReal = !/^\d+$/.test(id)
     if (isReal) { try { await deleteQuote(id) } catch { /* offline */ } }
+  }
+
+  const handleConvertToJob = async (q: any) => {
+    setConvertingId(q.id)
+    try {
+      await createJob({
+        customer_id: q.customer_id,
+        trade: q.trade,
+        quoted_value: q.total,
+        status: 'quoted',
+        notes: `Converted from quote ${q.quote_number}`,
+      })
+      setQuotes(quotes.map((x) => x.id === q.id ? { ...x, status: 'signed' } : x))
+    } catch { /* offline */ }
+    finally { setConvertingId(null) }
   }
 
   const fmt = (n: number) => `$${(n || 0).toLocaleString()}`
@@ -129,9 +145,22 @@ export default function QuotesPage() {
                     <span className="font-mono text-xs text-[#606070]">{q.created_at?.split('T')[0] || q.created_at}</span>
                   </td>
                   <td className="px-4 py-3.5 text-right">
-                    <button onClick={() => handleDelete(q.id)} className="p-1 text-[#606070] hover:text-[#b83232] transition-colors">
-                      <Trash2 size={13} />
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      {['awaiting_signature', 'signed'].includes(q.status) && (
+                        <button
+                          onClick={() => handleConvertToJob(q)}
+                          disabled={convertingId === q.id}
+                          title="Convert to Job"
+                          className="flex items-center gap-1 font-nav text-xs text-[#3eb85a] hover:text-[#52d46f] transition-colors disabled:opacity-50"
+                        >
+                          {convertingId === q.id ? <RefreshCw size={11} className="animate-spin" /> : <Briefcase size={11} />}
+                          <span className="hidden sm:inline">To Job</span>
+                        </button>
+                      )}
+                      <button onClick={() => handleDelete(q.id)} className="p-1 text-[#606070] hover:text-[#b83232] transition-colors">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

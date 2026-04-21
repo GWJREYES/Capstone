@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { CreditCard, ExternalLink, CheckCircle, Clock, AlertCircle, RefreshCw, Check } from 'lucide-react'
-import { fetchPayments, markPaymentPaid } from '@/lib/api'
+import { fetchPayments, markPaymentPaid, fetchJobs, updateJob } from '@/lib/api'
+import JobDetailOverlay from '@/components/jobs/JobDetailOverlay'
 
 const STATUS_CFG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
   pending: { icon: <Clock size={12} />, color: 'text-[#4a9de0]', label: 'Pending' },
@@ -19,8 +20,11 @@ const STRIPE_STEPS = [
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([])
+  const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [markingId, setMarkingId] = useState<string | null>(null)
+  const [selectedJob, setSelectedJob] = useState<any>(null)
+  const [savingJob, setSavingJob] = useState(false)
 
   const stripeConfigured = !!(
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
@@ -29,7 +33,11 @@ export default function PaymentsPage() {
 
   const load = async () => {
     setLoading(true)
-    try { setPayments(await fetchPayments()) } finally { setLoading(false) }
+    try {
+      const [p, j] = await Promise.all([fetchPayments(), fetchJobs()])
+      setPayments(p)
+      setJobs(j)
+    } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
 
@@ -42,10 +50,32 @@ export default function PaymentsPage() {
     } finally { setMarkingId(null) }
   }
 
+  const handleJobClick = (p: any) => {
+    const job = p.job || jobs.find((j) => j.job_number === (p.job?.job_number || p.job_number))
+    if (job) setSelectedJob(job)
+  }
+
+  const handleSaveJob = async (updated: any) => {
+    if (!selectedJob) return
+    setSavingJob(true)
+    try {
+      if (selectedJob.id && !/^\d+$/.test(selectedJob.id)) {
+        await updateJob(selectedJob.id, updated)
+      }
+      setJobs(jobs.map((j) => j.id === selectedJob.id ? { ...j, ...updated } : j))
+    } finally {
+      setSavingJob(false)
+      setSelectedJob(null)
+    }
+  }
+
   const fmt = (n: number) => `$${(n || 0).toLocaleString()}`
   const pending = payments.filter((p) => p.status === 'pending').reduce((s, p) => s + p.amount, 0)
   const overdue = payments.filter((p) => p.status === 'overdue').reduce((s, p) => s + p.amount, 0)
   const collected = payments.filter((p) => p.status === 'paid').reduce((s, p) => s + p.amount, 0)
+
+  const jobNumber = (p: any) => p.job?.job_number || p.job_number
+  const hasJob = (p: any) => !!(p.job || jobs.find((j) => j.job_number === jobNumber(p)))
 
   return (
     <div className="min-h-screen bg-[#09090b] pt-14 lg:pt-0">
@@ -131,13 +161,25 @@ export default function PaymentsPage() {
                 <tbody>
                   {payments.map((p) => {
                     const cfg = STATUS_CFG[p.status] || STATUS_CFG.pending
+                    const jnum = jobNumber(p)
+                    const clickable = hasJob(p)
                     return (
                       <tr key={p.id} className="border-b border-[#2a2a32]/50">
                         <td className="px-4 py-3.5">
                           <span className="font-body text-sm text-[#e8e8ee]">{p.customer?.name || p.customer_name || '—'}</span>
                         </td>
                         <td className="px-4 py-3.5 hidden md:table-cell">
-                          <span className="font-mono text-xs text-[#4a9de0]">{p.job?.job_number || p.job_number || '—'}</span>
+                          {jnum ? (
+                            <button
+                              onClick={() => handleJobClick(p)}
+                              disabled={!clickable}
+                              className={`font-mono text-xs transition-colors ${clickable ? 'text-[#4a9de0] hover:text-[#5ab0f5] hover:underline cursor-pointer' : 'text-[#4a9de0]'}`}
+                            >
+                              {jnum}
+                            </button>
+                          ) : (
+                            <span className="font-mono text-xs text-[#606070]">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5 hidden lg:table-cell">
                           <span className="font-body text-sm text-[#9090a0]">{p.description}</span>
@@ -173,6 +215,15 @@ export default function PaymentsPage() {
           )}
         </div>
       </div>
+
+      {selectedJob && (
+        <JobDetailOverlay
+          job={selectedJob}
+          onClose={() => setSelectedJob(null)}
+          onSave={handleSaveJob}
+          saving={savingJob}
+        />
+      )}
     </div>
   )
 }

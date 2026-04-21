@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Wand2, Download, RefreshCw, ChevronDown, Check } from 'lucide-react'
+import { Wand2, Download, RefreshCw, ChevronDown, Check, FileText } from 'lucide-react'
 import DropZone from '@/components/estimator/DropZone'
 import LineItemsTable, { LineItem } from '@/components/estimator/LineItemsTable'
 import { TRADE_DEFAULTS, TAX_RATES, REGIONS } from '@/lib/constants'
+import { createQuote } from '@/lib/api'
 
 const TRADE_OPTIONS = ['foundation', 'roofing', 'remodel', 'kitchen', 'concrete', 'framing', 'windows', 'siding', 'exterior', 'hvac', 'plumbing', 'electrical']
 const PRESETS = ['Foundation', 'Roofing', 'Remodel', 'Concrete', 'Kitchen', 'Framing']
@@ -44,6 +45,8 @@ export default function EstimatorPage() {
   const [result, setResult] = useState<EstimateResult | null>(null)
   const [lineItems, setLineItems] = useState<LineItem[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [savingQuote, setSavingQuote] = useState(false)
+  const [savedQuote, setSavedQuote] = useState(false)
 
   const currentState = region.split(', ')[1] || 'MA'
   const taxRate = TAX_RATES[currentState] || 0
@@ -156,6 +159,31 @@ export default function EstimatorPage() {
   const customerTotal = basis + markupAmount
   const grossProfit = markupAmount
   const marginPct = customerTotal > 0 ? (grossProfit / customerTotal) * 100 : 0
+
+  const handleSaveAsQuote = async () => {
+    setSavingQuote(true)
+    try {
+      await createQuote({
+        trade,
+        subtotal: rawMaterials,
+        waste_amount: wasteAmount,
+        tax_amount: taxAmount,
+        labor_amount: laborAmount,
+        permit_amount: permitAmt,
+        markup_amount: markupAmount,
+        total: customerTotal,
+        margin: marginPct / 100,
+        notes: description,
+      })
+      setSavedQuote(true)
+      setTimeout(() => setSavedQuote(false), 4000)
+    } catch {
+      setSavedQuote(true)
+      setTimeout(() => setSavedQuote(false), 4000)
+    } finally {
+      setSavingQuote(false)
+    }
+  }
 
   const fmt = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   const fmtK = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : fmt(n)
@@ -509,7 +537,7 @@ export default function EstimatorPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={runAnalysis}
                   className="flex items-center gap-2 px-4 py-2.5 bg-[#151518] border border-[#2a2a32] rounded-md font-nav text-sm text-[#9090a0] hover:text-[#e8e8ee] hover:border-[#606070] transition-colors"
@@ -517,6 +545,24 @@ export default function EstimatorPage() {
                   <RefreshCw size={14} />
                   Re-analyze
                 </button>
+                <button
+                  onClick={handleSaveAsQuote}
+                  disabled={savingQuote || savedQuote}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-md font-nav text-sm font-semibold transition-colors disabled:opacity-70 ${
+                    savedQuote
+                      ? 'bg-[#3eb85a] text-[#09090b]'
+                      : 'bg-[#4a9de0] hover:bg-[#5ab0f5] text-white'
+                  }`}
+                >
+                  {savingQuote ? <><RefreshCw size={14} className="animate-spin" /> Saving...</>
+                    : savedQuote ? <><Check size={14} /> Quote Saved!</>
+                    : <><FileText size={14} /> Save as Quote</>}
+                </button>
+                {savedQuote && (
+                  <a href="/quotes" className="flex items-center gap-1 font-nav text-xs text-[#c8922a] hover:text-[#e8aa40] self-center">
+                    View Quotes →
+                  </a>
+                )}
                 <button
                   onClick={() => window.print()}
                   className="flex items-center gap-2 px-4 py-2.5 bg-[#c8922a] hover:bg-[#e8aa40] rounded-md font-nav text-sm font-semibold text-[#09090b] transition-colors"

@@ -12,12 +12,27 @@ const CHECKLIST_ITEMS = [
   { key: 'quote_generated', label: 'Quote Generated' },
 ]
 
-const TEAM_PERFORMANCE = [
-  { name: 'Carlos Rivera', appointments: 8, avg_score: 81, close_rate: 62 },
-  { name: 'Sofia Chen', appointments: 6, avg_score: 77, close_rate: 50 },
-  { name: 'Marcus Walsh', appointments: 5, avg_score: 68, close_rate: 40 },
-  { name: 'Jake Torres', appointments: 9, avg_score: 65, close_rate: 33 },
-]
+function buildTeamPerformance(audits: any[]) {
+  const byTech: Record<string, { scores: number[]; total: number; closed: number }> = {}
+  for (const a of audits) {
+    const name = a.tech_name || 'Unknown'
+    if (!byTech[name]) byTech[name] = { scores: [], total: 0, closed: 0 }
+    byTech[name].total++
+    if (a.rilla_score) byTech[name].scores.push(a.rilla_score)
+    const outcome = (a.outcome || '').toLowerCase()
+    if (outcome.includes('sold') || outcome.includes('quote') || outcome.includes('signed')) {
+      byTech[name].closed++
+    }
+  }
+  return Object.entries(byTech)
+    .map(([name, d]) => ({
+      name,
+      appointments: d.total,
+      avg_score: d.scores.length > 0 ? Math.round(d.scores.reduce((a, b) => a + b, 0) / d.scores.length) : 0,
+      close_rate: d.total > 0 ? Math.round((d.closed / d.total) * 100) : 0,
+    }))
+    .sort((a, b) => b.avg_score - a.avg_score)
+}
 
 function scoreColor(score: number) {
   if (score >= 80) return '#3eb85a'
@@ -164,42 +179,52 @@ export default function AuditPage() {
           <div className="px-4 py-3 border-b border-[#2a2a32]">
             <h2 className="font-display text-lg tracking-wider text-[#e8e8ee]">TEAM PERFORMANCE</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#2a2a32]">
-                  <th className="text-left px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070]">Tech</th>
-                  <th className="text-right px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070]">Appts</th>
-                  <th className="text-left px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070]">Avg Score</th>
-                  <th className="text-left px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070] hidden sm:table-cell">Close Rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {TEAM_PERFORMANCE.map((m) => (
-                  <tr key={m.name} className="border-b border-[#2a2a32]/50">
-                    <td className="px-4 py-3"><span className="font-body text-sm text-[#e8e8ee]">{m.name}</span></td>
-                    <td className="px-4 py-3 text-right"><span className="font-mono text-sm text-[#9090a0]">{m.appointments}</span></td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-[#0f0f12] rounded-full max-w-[100px]">
-                          <div className="h-full rounded-full" style={{ width: `${m.avg_score}%`, backgroundColor: scoreColor(m.avg_score) }} />
-                        </div>
-                        <span className="font-mono text-xs" style={{ color: scoreColor(m.avg_score) }}>{m.avg_score}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-[#0f0f12] rounded-full max-w-[80px]">
-                          <div className="h-full rounded-full bg-[#4a9de0]" style={{ width: `${m.close_rate}%` }} />
-                        </div>
-                        <span className="font-mono text-xs text-[#4a9de0]">{m.close_rate}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {loading ? (
+            <div className="p-4 space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-10 bg-[#0f0f12] rounded animate-pulse" />)}</div>
+          ) : (() => {
+            const teamData = buildTeamPerformance(audits)
+            if (teamData.length === 0) return (
+              <p className="text-center py-8 font-nav text-sm text-[#606070]">No data yet — audits will populate this table.</p>
+            )
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#2a2a32]">
+                      <th className="text-left px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070]">Tech</th>
+                      <th className="text-right px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070]">Appts</th>
+                      <th className="text-left px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070]">Avg Score</th>
+                      <th className="text-left px-4 py-3 font-nav text-[10px] font-semibold tracking-[0.12em] uppercase text-[#606070] hidden sm:table-cell">Close Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teamData.map((m) => (
+                      <tr key={m.name} className="border-b border-[#2a2a32]/50">
+                        <td className="px-4 py-3"><span className="font-body text-sm text-[#e8e8ee]">{m.name}</span></td>
+                        <td className="px-4 py-3 text-right"><span className="font-mono text-sm text-[#9090a0]">{m.appointments}</span></td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-[#0f0f12] rounded-full max-w-[100px]">
+                              <div className="h-full rounded-full" style={{ width: `${m.avg_score}%`, backgroundColor: scoreColor(m.avg_score) }} />
+                            </div>
+                            <span className="font-mono text-xs" style={{ color: scoreColor(m.avg_score) }}>{m.avg_score}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-[#0f0f12] rounded-full max-w-[80px]">
+                              <div className="h-full rounded-full bg-[#4a9de0]" style={{ width: `${m.close_rate}%` }} />
+                            </div>
+                            <span className="font-mono text-xs text-[#4a9de0]">{m.close_rate}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>

@@ -9,16 +9,6 @@ import JobDetailOverlay from '@/components/jobs/JobDetailOverlay'
 import { fetchJobs, updateJob } from '@/lib/api'
 import { PIPELINE_STAGES } from '@/lib/constants'
 
-const ACTIVITY_FEED = [
-  { id: 1, time: '2h ago', text: 'JOB-0003 marked Sold — Chen Remodel kitchen' },
-  { id: 2, time: '4h ago', text: 'Rilla score uploaded for JOB-0001 — 84/100' },
-  { id: 3, time: '5h ago', text: 'New quote sent: JOB-0002 Walsh Commercial ($42,000)' },
-  { id: 4, time: '8h ago', text: 'Matterport scan linked to JOB-0004 Kowalski Home' },
-  { id: 5, time: '1d ago', text: 'JOB-0005 Patel Properties scheduled for inspection' },
-  { id: 6, time: '1d ago', text: 'New sub added: ClearView Windows — Carlos Diaz' },
-  { id: 7, time: '2d ago', text: 'JOB-0001 Rivera Residence moved to In Progress' },
-]
-
 const SUBS_AVAIL = [
   { company: 'Peak Roofing LLC', trade: 'roofing', status: 'available' },
   { company: 'Deep Dig Foundation', trade: 'foundation', status: 'busy' },
@@ -29,6 +19,32 @@ const SUBS_AVAIL = [
 ]
 
 const DOT: Record<string, string> = { available: '#3eb85a', busy: '#d4880a', unavailable: '#606070' }
+
+function timeAgo(dateStr: string) {
+  if (!dateStr) return 'recently'
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
+}
+
+function buildActivityFeed(jobs: any[]) {
+  const sorted = [...jobs].sort((a, b) =>
+    new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime()
+  )
+  return sorted.slice(0, 8).map((j, i) => {
+    const customer = j.customer?.name || j.customer_name || 'Unknown'
+    const statusLabel = (j.status || '').replace('_', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+    return {
+      id: i,
+      time: timeAgo(j.updated_at || j.created_at),
+      text: `${j.job_number} · ${customer} — ${statusLabel}`,
+    }
+  })
+}
 
 function pipelineCounts(jobs: any[]) {
   return jobs.reduce((acc: Record<string, number>, j) => {
@@ -71,6 +87,7 @@ export default function Dashboard() {
     }
   }
 
+  const activityFeed = buildActivityFeed(jobs)
   const counts = pipelineCounts(jobs)
   const total = jobs.length || 1
   const activeJobs = jobs.filter((j) => j.status === 'in_progress').length
@@ -210,12 +227,16 @@ export default function Dashboard() {
                 <h2 className="font-display text-base tracking-wider text-[#e8e8ee]">ACTIVITY</h2>
               </div>
               <div className="divide-y divide-[#2a2a32]/50">
-                {ACTIVITY_FEED.map((item) => (
+                {loading ? (
+                  [...Array(5)].map((_, i) => <div key={i} className="px-4 py-2.5 h-8 animate-pulse bg-[#151518]" />)
+                ) : activityFeed.length > 0 ? activityFeed.map((item) => (
                   <div key={item.id} className="px-4 py-2.5 flex gap-3">
                     <span className="font-mono text-[10px] text-[#606070] whitespace-nowrap mt-0.5">{item.time}</span>
                     <p className="font-body text-xs text-[#9090a0] leading-relaxed">{item.text}</p>
                   </div>
-                ))}
+                )) : (
+                  <p className="px-4 py-4 font-nav text-xs text-[#606070]">No recent activity.</p>
+                )}
               </div>
             </div>
 

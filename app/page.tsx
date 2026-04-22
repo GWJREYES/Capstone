@@ -105,7 +105,9 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-display text-3xl tracking-widest text-[#e8e8ee]">DASHBOARD</h1>
-            <p className="font-nav text-sm text-[#606070] mt-0.5">Sunday, April 20, 2026 · New England Region</p>
+            <p className="font-nav text-sm text-[#606070] mt-0.5">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} · New England Region
+            </p>
           </div>
           <div className="flex items-center gap-3">
             {activeJobs > 0 && (
@@ -124,11 +126,11 @@ export default function Dashboard() {
       <div className="p-4 lg:p-6 space-y-6">
         {/* Stat Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <StatBlock label="Active Jobs" value={loading ? '—' : String(activeJobs)} color="green" icon={<Briefcase size={14} />} />
-          <StatBlock label="Pipeline Value" value={loading ? '—' : `$${(pipeline / 1000).toFixed(0)}K`} color="gold" icon={<TrendingUp size={14} />} />
-          <StatBlock label="Quotes Out" value={loading ? '—' : String(quotesOut)} color="blue" icon={<FileText size={14} />} />
-          <StatBlock label="Audits Due" value={loading ? '—' : String(auditsDue)} color="red" icon={<ClipboardCheck size={14} />} />
-          <StatBlock label="Total Jobs" value={loading ? '—' : String(jobs.length)} color="default" icon={<HardHat size={14} />} />
+          <StatBlock label="Active Jobs" value={loading ? '—' : String(activeJobs)} color="green" icon={<Briefcase size={14} />} trend={loading ? undefined : activeJobs} />
+          <StatBlock label="Pipeline Value" value={loading ? '—' : `$${(pipeline / 1000).toFixed(0)}K`} color="gold" icon={<TrendingUp size={14} />} sub={loading ? undefined : `${jobs.filter(j => j.status === 'sold').length} sold`} />
+          <StatBlock label="Quotes Out" value={loading ? '—' : String(quotesOut)} color="blue" icon={<FileText size={14} />} sub={loading ? undefined : 'awaiting signature'} />
+          <StatBlock label="Audits Due" value={loading ? '—' : String(auditsDue)} color="red" icon={<ClipboardCheck size={14} />} sub={loading ? undefined : 'need review'} />
+          <StatBlock label="Total Jobs" value={loading ? '—' : String(jobs.length)} color="default" icon={<HardHat size={14} />} sub={loading ? undefined : `${jobs.filter(j => j.status === 'complete').length} complete`} />
         </div>
 
         {/* Pipeline Bar */}
@@ -217,7 +219,11 @@ export default function Dashboard() {
                   </tbody>
                 </table>
                 {jobs.length === 0 && (
-                  <p className="text-center py-10 font-nav text-sm text-[#606070]">No jobs yet. <a href="/jobs" className="text-[#c8922a]">Create one →</a></p>
+                  <div className="text-center py-12">
+                    <Briefcase size={28} className="mx-auto text-[#2a2a32] mb-3" />
+                    <p className="font-nav text-sm text-[#606070]">No jobs yet.</p>
+                    <a href="/jobs" className="font-nav text-xs text-[#c8922a] hover:text-[#e8aa40] mt-1 inline-block">Create your first job →</a>
+                  </div>
                 )}
               </div>
             )}

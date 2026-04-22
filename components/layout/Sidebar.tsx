@@ -4,8 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Briefcase, ClipboardList, Users, Wand2,
-  FileText, HardHat, Clipboard, FolderOpen, CreditCard, X,
-  ChevronRight
+  FileText, HardHat, Clipboard, FolderOpen, CreditCard, X, Settings2
 } from 'lucide-react'
 
 const navGroups = [
@@ -58,14 +57,17 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     <div className="flex flex-col h-full bg-[#0f0f12] border-r border-[#2a2a32] w-60">
       {/* Logo */}
       <div className="flex items-center justify-between px-4 pt-5 pb-4 border-b border-[#2a2a32]">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-[#c8922a] rounded-sm flex items-center justify-center">
-            <div className="w-2.5 h-2.5 bg-[#0f0f12] rounded-[2px]" />
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#c8922a] to-[#e8aa40] flex items-center justify-center flex-shrink-0">
+            <Settings2 size={16} className="text-[#09090b]" strokeWidth={2.5} />
           </div>
-          <span className="font-display text-2xl tracking-widest text-[#e8aa40]">CAPSTONE</span>
+          <div className="leading-none">
+            <span className="font-display text-lg tracking-widest text-[#e8aa40] block">CAPSTONE</span>
+            <span className="font-nav text-[9px] tracking-[0.18em] text-[#606070] uppercase block mt-0.5">General Contracting</span>
+          </div>
         </div>
         {onClose && (
-          <button onClick={onClose} className="text-[#606070] hover:text-[#e8e8ee] lg:hidden">
+          <button onClick={onClose} className="text-[#606070] hover:text-[#e8e8ee] lg:hidden ml-2">
             <X size={18} />
           </button>
         )}
@@ -85,17 +87,17 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 key={href}
                 href={href}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md mb-0.5 group transition-all duration-150 ${
+                className={`relative flex items-center gap-3 px-3 py-2 rounded-md mb-0.5 transition-all duration-150 ${
                   isActive(href)
-                    ? 'bg-[#c8922a]/10 text-[#e8aa40] border border-[#c8922a]/20'
+                    ? 'bg-[#c8922a]/10 text-[#e8aa40]'
                     : 'text-[#9090a0] hover:text-[#e8e8ee] hover:bg-[#151518]'
                 }`}
               >
+                {isActive(href) && (
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[#c8922a]" />
+                )}
                 <Icon size={16} className={isActive(href) ? 'text-[#c8922a]' : 'text-current'} />
                 <span className="font-nav text-sm font-medium tracking-wide">{label}</span>
-                {isActive(href) && (
-                  <ChevronRight size={12} className="ml-auto text-[#c8922a]/60" />
-                )}
               </Link>
             ))}
           </div>
@@ -105,7 +107,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       {/* User footer */}
       <div className="px-4 py-3 border-t border-[#2a2a32]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#c8922a]/20 border border-[#c8922a]/30 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c8922a]/30 to-[#c8922a]/10 border border-[#c8922a]/40 flex items-center justify-center">
             <span className="font-display text-sm text-[#e8aa40]">J</span>
           </div>
           <div>
@@ -117,21 +119,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     </div>
   )
 
-  // Mobile overlay only — desktop is rendered separately in SidebarWrapper
   if (typeof open !== 'undefined') {
     return (
       <>
         {open && (
-          <div
-            className="fixed inset-0 z-40 overlay-backdrop lg:hidden"
-            onClick={onClose}
-          />
+          <div className="fixed inset-0 z-40 overlay-backdrop lg:hidden" onClick={onClose} />
         )}
-        <div
-          className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:hidden ${
-            open ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
+        <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:hidden ${open ? 'translate-x-0' : '-translate-x-full'}`}>
           {content}
         </div>
       </>

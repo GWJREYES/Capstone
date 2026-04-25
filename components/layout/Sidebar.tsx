@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -50,6 +51,7 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const [logoError, setLogoError] = useState(false)
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
@@ -60,11 +62,24 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     <div className="flex flex-col h-full bg-[#0c1221] border-r border-[#1a2844] w-60">
       {/* Logo */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[#1a2844]">
-        <img
-          src="/logo.png"
-          alt="Capstone General Contracting"
-          className="h-16 w-auto"
-        />
+        {!logoError ? (
+          <img
+            src="/logo.png"
+            alt="Capstone General Contracting"
+            className="h-16 w-auto"
+            onError={() => setLogoError(true)}
+          />
+        ) : (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#c8922a] to-[#e8aa40] flex items-center justify-center flex-shrink-0">
+              <span className="font-display text-sm text-[#09090b] leading-none">C</span>
+            </div>
+            <div className="leading-none">
+              <span className="font-display text-lg tracking-widest text-[#e8aa40] block">CAPSTONE</span>
+              <span className="font-nav text-[9px] tracking-[0.18em] text-[#606070] uppercase block mt-0.5">General Contracting</span>
+            </div>
+          </div>
+        )}
         {onClose && (
           <button onClick={onClose} className="text-[#606070] hover:text-[#e8e8ee] lg:hidden ml-2 flex-shrink-0">
             <X size={18} />

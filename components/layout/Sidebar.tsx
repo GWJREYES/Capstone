@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Briefcase, ClipboardList, Users, Wand2,
-  FileText, HardHat, Clipboard, FolderOpen, CreditCard, X, Settings2
+  FileText, HardHat, Clipboard, FolderOpen, CreditCard, X
 } from 'lucide-react'
 
 const navGroups = [
@@ -54,20 +54,16 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   }
 
   const content = (
-    <div className="flex flex-col h-full bg-[#0f0f12] border-r border-[#2a2a32] w-60">
+    <div className="flex flex-col h-full bg-[#0c1221] border-r border-[#1a2844] w-60">
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 pt-5 pb-4 border-b border-[#2a2a32]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#c8922a] to-[#e8aa40] flex items-center justify-center flex-shrink-0">
-            <Settings2 size={16} className="text-[#09090b]" strokeWidth={2.5} />
-          </div>
-          <div className="leading-none">
-            <span className="font-display text-lg tracking-widest text-[#e8aa40] block">CAPSTONE</span>
-            <span className="font-nav text-[9px] tracking-[0.18em] text-[#606070] uppercase block mt-0.5">General Contracting</span>
-          </div>
-        </div>
+      <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[#1a2844]">
+        <img
+          src="/logo.png"
+          alt="Capstone General Contracting"
+          className="h-16 w-auto"
+        />
         {onClose && (
-          <button onClick={onClose} className="text-[#606070] hover:text-[#e8e8ee] lg:hidden ml-2">
+          <button onClick={onClose} className="text-[#606070] hover:text-[#e8e8ee] lg:hidden ml-2 flex-shrink-0">
             <X size={18} />
           </button>
         )}
@@ -90,7 +86,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 className={`relative flex items-center gap-3 px-3 py-2 rounded-md mb-0.5 transition-all duration-150 ${
                   isActive(href)
                     ? 'bg-[#c8922a]/10 text-[#e8aa40]'
-                    : 'text-[#9090a0] hover:text-[#e8e8ee] hover:bg-[#151518]'
+                    : 'text-[#9090a0] hover:text-[#e8e8ee] hover:bg-[#111d35]'
                 }`}
               >
                 {isActive(href) && (
@@ -105,7 +101,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       </nav>
 
       {/* User footer */}
-      <div className="px-4 py-3 border-t border-[#2a2a32]">
+      <div className="px-4 py-3 border-t border-[#1a2844]">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c8922a]/30 to-[#c8922a]/10 border border-[#c8922a]/40 flex items-center justify-center">
             <span className="font-display text-sm text-[#e8aa40]">J</span>

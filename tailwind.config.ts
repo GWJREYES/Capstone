@@ -14,6 +14,11 @@ const config: Config = {
         panel: '#151518',
         'panel-light': '#1c1c21',
         border: '#2a2a32',
+        navy: {
+          DEFAULT: '#0c1221',
+          light: '#111d35',
+          border: '#1a2844',
+        },
         gold: {
           DEFAULT: '#c8922a',
           light: '#e8aa40',

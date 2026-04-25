@@ -87,6 +87,114 @@ export const STATUS_STYLES: Record<string, string> = {
   unavailable: 'text-text-muted',
 }
 
+// ─── Subcontractor Operations Module constants ────────────────────────────────
+
+export const PERMIT_STATUS_STYLES: Record<string, string> = {
+  not_applied:    'bg-[#151518] text-[#606070] border-[#2a2a32]',
+  pending:        'bg-blue-900/30 text-blue-400 border-blue-800/40',
+  approved:       'bg-green-900/30 text-[#3eb85a] border-green-dim/40',
+  active:         'bg-green-900/50 text-[#3eb85a] border-green-dim/60',
+  inspection_due: 'bg-amber-900/30 text-[#d4880a] border-amber-800/40',
+  closed:         'bg-[#151518] text-[#606070] border-[#2a2a32]',
+  rejected:       'bg-red-900/30 text-[#b83232] border-red-800/40',
+}
+
+export const PERMIT_STATUS_LABELS: Record<string, string> = {
+  not_applied:    'Not Applied',
+  pending:        'Pending',
+  approved:       'Approved',
+  active:         'Active',
+  inspection_due: 'Inspection Due',
+  closed:         'Closed',
+  rejected:       'Rejected',
+}
+
+export const APPLICATION_STATUS_STYLES: Record<string, string> = {
+  pending:  'bg-amber-900/30 text-[#d4880a] border-amber-800/40',
+  approved: 'bg-green-900/30 text-[#3eb85a] border-green-dim/40',
+  rejected: 'bg-red-900/30 text-[#b83232] border-red-800/40',
+}
+
+export const TIMELINE_EVENT_ICONS: Record<string, string> = {
+  status_change: 'arrow',
+  note:          'message',
+  assignment:    'user',
+  permit_update: 'file',
+  daily_update:  'clipboard',
+  milestone:     'star',
+  document:      'paperclip',
+}
+
+export const PERMIT_TYPES = [
+  'Building',
+  'Electrical',
+  'Plumbing',
+  'Mechanical',
+  'Demolition',
+  'Roofing',
+  'Foundation',
+  'Zoning',
+  'Other',
+]
+
+export const MOCK_APPLICATIONS = [
+  {
+    id: 'app-1',
+    company: 'Apex Roofing Solutions',
+    contact_name: 'Mike Torres',
+    trade: 'roofing',
+    crew_size: 5,
+    license_number: 'MA-ROF-99182',
+    license_expiry: '2027-03-15',
+    hourly_rate: 88,
+    phone: '617-555-0811',
+    email: 'mike@apexroofing.com',
+    city: 'Brockton',
+    state: 'MA',
+    bio: '12 years residential and commercial roofing in New England. Specializing in GAF and Owens Corning systems.',
+    years_experience: 12,
+    insurance_carrier: 'Travelers',
+    insurance_policy: 'TRV-44192-B',
+    references_text: 'Beacon Contracting, Salem MA · SkyHigh Construction, Quincy MA',
+    status: 'pending',
+    created_at: '2026-04-22T10:30:00Z',
+  },
+  {
+    id: 'app-2',
+    company: 'BrightSpark Electric',
+    contact_name: 'Diane Walsh',
+    trade: 'electrical',
+    crew_size: 3,
+    license_number: 'MA-ELE-54771',
+    license_expiry: '2026-12-01',
+    hourly_rate: 102,
+    phone: '508-555-0944',
+    email: 'diane@brightspark.com',
+    city: 'Worcester',
+    state: 'MA',
+    bio: 'Licensed master electrician. Residential panel upgrades, EV charging, code compliance.',
+    years_experience: 8,
+    insurance_carrier: 'Liberty Mutual',
+    insurance_policy: 'LM-22891-E',
+    references_text: 'Green Valley Builders · Atlas Renovation Group',
+    status: 'pending',
+    created_at: '2026-04-21T14:15:00Z',
+  },
+]
+
+export const MOCK_PERMITS: Record<string, any[]> = {}
+
+export const MOCK_TIMELINE: Record<string, any[]> = {
+  '1': [
+    { id: 't1', job_id: '1', event_type: 'status_change', from_status: 'lead', to_status: 'scheduled', description: 'Job scheduled with customer.', actor: 'Justin', actor_type: 'admin', metadata: {}, created_at: '2026-04-01T09:00:00Z' },
+    { id: 't2', job_id: '1', event_type: 'assignment', from_status: null, to_status: null, description: 'Assigned to Peak Roofing LLC.', actor: 'Justin', actor_type: 'admin', metadata: {}, created_at: '2026-04-03T11:30:00Z' },
+    { id: 't3', job_id: '1', event_type: 'status_change', from_status: 'scheduled', to_status: 'in_progress', description: 'Work started on site.', actor: 'Peak Roofing LLC', actor_type: 'subcontractor', metadata: {}, created_at: '2026-04-10T07:00:00Z' },
+    { id: 't4', job_id: '1', event_type: 'daily_update', from_status: null, to_status: null, description: 'Day 1: Removed 2 layers of shingles. 40% complete.', actor: 'Peak Roofing LLC', actor_type: 'subcontractor', metadata: { completion_pct: 40 }, created_at: '2026-04-10T17:00:00Z' },
+  ],
+}
+
+export const MOCK_DAILY_UPDATES: Record<string, any[]> = {}
+
 export const PIPELINE_STAGES = [
   { key: 'lead', label: 'Lead', color: '#606070' },
   { key: 'scheduled', label: 'Scheduled', color: '#4a9de0' },

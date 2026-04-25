@@ -353,3 +353,196 @@ export async function createInspection(body: Record<string, any>) {
     throw e
   }
 }
+
+// ─── Sub Applications ─────────────────────────────────────────────────────────
+
+export async function fetchSubApplications(status?: string) {
+  try {
+    const supabase = getClient()
+    let query = supabase
+      .from('sub_applications')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (status) query = query.eq('status', status)
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
+  } catch {
+    return []
+  }
+}
+
+export async function createSubApplication(body: Record<string, any>) {
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('sub_applications')
+    .insert([body])
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function reviewSubApplication(
+  id: string,
+  status: 'approved' | 'rejected',
+  admin_note?: string,
+  reviewed_by?: string
+) {
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('sub_applications')
+    .update({ status, admin_note, reviewed_by, reviewed_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+// ─── Permits ─────────────────────────────────────────────────────────────────
+
+export async function fetchPermits(job_id: string) {
+  try {
+    const supabase = getClient()
+    const { data, error } = await supabase
+      .from('permits')
+      .select('*')
+      .eq('job_id', job_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  } catch {
+    return []
+  }
+}
+
+export async function createPermit(body: Record<string, any>) {
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('permits')
+    .insert([body])
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updatePermit(id: string, body: Record<string, any>) {
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('permits')
+    .update(body)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deletePermit(id: string) {
+  const supabase = getClient()
+  const { error } = await supabase.from('permits').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ─── Daily Updates ────────────────────────────────────────────────────────────
+
+export async function fetchDailyUpdates(job_id?: string, sub_id?: string) {
+  try {
+    const supabase = getClient()
+    let query = supabase
+      .from('sub_daily_updates')
+      .select('*, subcontractor:subcontractors(company,contact_name)')
+      .order('update_date', { ascending: false })
+    if (job_id) query = query.eq('job_id', job_id)
+    if (sub_id) query = query.eq('subcontractor_id', sub_id)
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
+  } catch {
+    return []
+  }
+}
+
+export async function createDailyUpdate(body: Record<string, any>) {
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('sub_daily_updates')
+    .insert([body])
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+// ─── Job Timeline ─────────────────────────────────────────────────────────────
+
+export async function fetchJobTimeline(job_id: string) {
+  try {
+    const supabase = getClient()
+    const { data, error } = await supabase
+      .from('job_timeline')
+      .select('*')
+      .eq('job_id', job_id)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  } catch {
+    return []
+  }
+}
+
+export async function addTimelineEvent(body: Record<string, any>) {
+  try {
+    const supabase = getClient()
+    const { data, error } = await supabase
+      .from('job_timeline')
+      .insert([body])
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  } catch {
+    return null
+  }
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export async function fetchNotifications(target_type: 'admin' | 'sub' = 'admin') {
+  try {
+    const supabase = getClient()
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('target_type', target_type)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (error) throw error
+    return data || []
+  } catch {
+    return []
+  }
+}
+
+export async function markNotificationRead(id: string) {
+  try {
+    const supabase = getClient()
+    await supabase.from('notifications').update({ read: true }).eq('id', id)
+  } catch {}
+}
+
+export async function markAllNotificationsRead() {
+  try {
+    const supabase = getClient()
+    await supabase.from('notifications').update({ read: true }).eq('target_type', 'admin').eq('read', false)
+  } catch {}
+}
+
+export async function createNotification(body: Record<string, any>) {
+  try {
+    const supabase = getClient()
+    await supabase.from('notifications').insert([body])
+  } catch {}
+}

@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Briefcase, ClipboardList, Users, Wand2,
-  FileText, HardHat, Clipboard, FolderOpen, CreditCard, X
+  FileText, HardHat, Clipboard, FolderOpen, CreditCard, X, UserCheck, Globe
 } from 'lucide-react'
+import NotificationBell from '@/components/ui/NotificationBell'
 
 const navGroups = [
   {
@@ -15,6 +16,7 @@ const navGroups = [
       { href: '/jobs', label: 'Jobs', icon: Briefcase },
       { href: '/audit', label: 'Audit', icon: ClipboardList },
       { href: '/customers', label: 'Customers', icon: Users },
+      { href: '/admin/applications', label: 'Applications', icon: UserCheck },
     ],
   },
   {
@@ -28,6 +30,7 @@ const navGroups = [
     label: 'Resources',
     items: [
       { href: '/subs', label: 'Subcontractors', icon: HardHat },
+      { href: '/sub-portal', label: 'Sub Portal', icon: Globe },
       { href: '/inspect', label: 'Inspection Forms', icon: Clipboard },
       { href: '/docs', label: 'Docs', icon: FolderOpen },
     ],
@@ -106,10 +109,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c8922a]/30 to-[#c8922a]/10 border border-[#c8922a]/40 flex items-center justify-center">
             <span className="font-display text-sm text-[#e8aa40]">J</span>
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="font-body text-sm font-semibold text-[#e8e8ee] leading-none">Justin</p>
             <p className="font-nav text-[11px] text-[#606070] mt-0.5 tracking-wide">General Contractor</p>
           </div>
+          <NotificationBell />
         </div>
       </div>
     </div>

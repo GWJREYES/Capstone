@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Upload, Image as ImageIcon, X } from 'lucide-react'
+import { Upload, Image as ImageIcon, X, Camera } from 'lucide-react'
 
 interface DropZoneProps {
   onFile: (file: File, base64: string) => void
@@ -11,7 +11,8 @@ interface DropZoneProps {
 
 export default function DropZone({ onFile, preview, onClear }: DropZoneProps) {
   const [dragging, setDragging] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const uploadRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
 
   const processFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) return
@@ -54,42 +55,64 @@ export default function DropZone({ onFile, preview, onClear }: DropZoneProps) {
   }
 
   return (
-    <div
-      onDragEnter={() => setDragging(true)}
-      onDragLeave={() => setDragging(false)}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
-      onClick={() => inputRef.current?.click()}
-      className={`relative border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${
-        dragging
-          ? 'border-[#c8922a] bg-[#c8922a]/5'
-          : 'border-[#2a2a32] hover:border-[#c8922a]/50 hover:bg-[#c8922a]/3'
-      }`}
-    >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleChange}
-        className="hidden"
-      />
-      <div className={`w-12 h-12 rounded-full border flex items-center justify-center transition-colors ${
-        dragging ? 'border-[#c8922a] bg-[#c8922a]/10' : 'border-[#2a2a32] bg-[#151518]'
-      }`}>
-        {dragging ? (
-          <Upload size={20} className="text-[#e8aa40]" />
-        ) : (
-          <ImageIcon size={20} className="text-[#606070]" />
-        )}
+    <div className="space-y-2">
+      {/* Drop zone */}
+      <div
+        onDragEnter={() => setDragging(true)}
+        onDragLeave={() => setDragging(false)}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+        onClick={() => uploadRef.current?.click()}
+        className={`relative border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
+          dragging
+            ? 'border-[#c8922a] bg-[#c8922a]/5'
+            : 'border-[#2a2a32] hover:border-[#c8922a]/50 hover:bg-[#c8922a]/3'
+        }`}
+      >
+        <input
+          ref={uploadRef}
+          type="file"
+          accept="image/*"
+          onChange={handleChange}
+          className="hidden"
+        />
+        {/* Hidden camera-capture input */}
+        <input
+          ref={cameraRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleChange}
+          className="hidden"
+        />
+        <div className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors ${
+          dragging ? 'border-[#c8922a] bg-[#c8922a]/10' : 'border-[#2a2a32] bg-[#151518]'
+        }`}>
+          {dragging ? (
+            <Upload size={18} className="text-[#e8aa40]" />
+          ) : (
+            <ImageIcon size={18} className="text-[#606070]" />
+          )}
+        </div>
+        <div className="text-center">
+          <p className="font-nav text-sm font-semibold text-[#e8e8ee]">
+            {dragging ? 'Drop photo here' : 'Upload project photo'}
+          </p>
+          <p className="font-body text-xs text-[#606070] mt-0.5">
+            Drag &amp; drop or click to browse · JPG, PNG, HEIC
+          </p>
+        </div>
       </div>
-      <div className="text-center">
-        <p className="font-nav text-sm font-semibold text-[#e8e8ee]">
-          {dragging ? 'Drop photo here' : 'Upload project photo'}
-        </p>
-        <p className="font-body text-xs text-[#606070] mt-1">
-          Drag &amp; drop or click to browse · JPG, PNG, HEIC
-        </p>
-      </div>
+
+      {/* Take Photo button — opens native camera (uses LiDAR depth on iPhone Pro) */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); cameraRef.current?.click() }}
+        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-[#151518] border border-[#2a2a32] text-[#9090a0] hover:text-[#e8e8ee] hover:border-[#c8922a]/40 transition-colors font-nav text-xs font-semibold tracking-wide"
+      >
+        <Camera size={14} />
+        TAKE PHOTO WITH CAMERA
+      </button>
     </div>
   )
 }

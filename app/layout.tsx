@@ -1,11 +1,27 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import SidebarWrapper from '@/components/layout/SidebarWrapper'
 import BottomNav from '@/components/layout/BottomNav'
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#09090b',
+}
+
 export const metadata: Metadata = {
   title: 'CAPSTONE — Field Operations Platform',
   description: 'Field operations platform for general contracting businesses',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Capstone',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 }
 
 export default function RootLayout({

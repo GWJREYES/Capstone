@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { X, ExternalLink, Save, RefreshCw, Wand2, ClipboardCheck, Check } from 'lucide-react'
 import StatusPill from '@/components/ui/StatusPill'
 import DocLinks from '@/components/ui/DocLinks'
+import PermitTracker from '@/components/jobs/PermitTracker'
+import JobTimeline from '@/components/jobs/JobTimeline'
 import { fetchInspections } from '@/lib/api'
 
 const TRADES = ['foundation', 'roofing', 'remodel', 'kitchen', 'concrete', 'framing', 'windows', 'siding', 'exterior', 'hvac', 'plumbing', 'electrical']
@@ -23,7 +25,7 @@ function severityStyle(s: string) {
 }
 
 export default function JobDetailOverlay({ job, onClose, onSave, saving }: JobDetailOverlayProps) {
-  const [tab, setTab] = useState<'details' | 'inspections'>('details')
+  const [tab, setTab] = useState<'details' | 'inspections' | 'permits' | 'timeline'>('details')
   const [form, setForm] = useState({
     status: job.status || 'lead',
     trade: job.trade || 'roofing',
@@ -94,18 +96,18 @@ export default function JobDetailOverlay({ job, onClose, onSave, saving }: JobDe
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[#2a2a32] px-5">
-          {(['details', 'inspections'] as const).map((t) => (
+        <div className="flex border-b border-[#2a2a32] px-5 overflow-x-auto">
+          {([ 'details', 'inspections', 'permits', 'timeline'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`py-3 px-1 mr-5 font-nav text-xs font-semibold tracking-wider border-b-2 transition-colors capitalize ${
+              className={`py-3 px-1 mr-5 font-nav text-xs font-semibold tracking-wider border-b-2 transition-colors whitespace-nowrap ${
                 tab === t
                   ? 'border-[#c8922a] text-[#e8aa40]'
                   : 'border-transparent text-[#606070] hover:text-[#9090a0]'
               }`}
             >
-              {t === 'inspections' ? 'INSPECTIONS' : 'DETAILS'}
+              {t === 'inspections' ? 'INSPECTIONS' : t.toUpperCase()}
             </button>
           ))}
         </div>
@@ -310,6 +312,24 @@ export default function JobDetailOverlay({ job, onClose, onSave, saving }: JobDe
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'permits' && (
+          <div className="flex-1 p-5">
+            {job.id
+              ? <PermitTracker jobId={job.id} />
+              : <p className="font-nav text-sm text-[#606070]">Save the job first to track permits.</p>
+            }
+          </div>
+        )}
+
+        {tab === 'timeline' && (
+          <div className="flex-1 p-5">
+            {job.id
+              ? <JobTimeline jobId={job.id} />
+              : <p className="font-nav text-sm text-[#606070]">Save the job first to view timeline.</p>
+            }
           </div>
         )}
 

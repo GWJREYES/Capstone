@@ -35,12 +35,15 @@ Guidelines:
 - Be specific with quantities and units (sq ft, ln ft, ea, hr, ton, bag, sheet, etc.)
 - Confidence should reflect photo clarity and description completeness (0.5-0.98)
 - Include 4-12 line items minimum for a thorough estimate
-- Unit prices should be material cost only (labor is calculated separately)`
+- Unit prices should be material cost only (labor is calculated separately)
+- If exact field measurements are provided, use them as ground truth for all quantity calculations — do NOT override them with photo estimates
+- When exact area is given, calculate material quantities directly from it (e.g. shingles = area × 1.1 waste factor / 100 sq)
+- Reflect higher confidence (0.90-0.98) when exact measurements are provided`
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { image_base64, description, trade, region, media_type } = body
+    const { image_base64, description, trade, region, media_type, measurements, measured_area, measured_perimeter } = body
 
     if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key_here') {
       return NextResponse.json(
@@ -62,12 +65,26 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    const measurementLines: string[] = []
+    if (measurements) {
+      if (measurements.length) measurementLines.push(`  Length: ${measurements.length} ft`)
+      if (measurements.width)  measurementLines.push(`  Width: ${measurements.width} ft`)
+      if (measurements.height) measurementLines.push(`  Height: ${measurements.height} ft`)
+      if (measurements.pitch)  measurementLines.push(`  Pitch/Slope: ${measurements.pitch}`)
+    }
+    if (measured_area)      measurementLines.push(`  Calculated Area: ${measured_area} sq ft`)
+    if (measured_perimeter) measurementLines.push(`  Calculated Perimeter: ${measured_perimeter} ln ft`)
+
+    const measurementBlock = measurementLines.length > 0
+      ? `\nExact Field Measurements (LiDAR/tape — use these for precise quantities, do NOT estimate from photo):\n${measurementLines.join('\n')}\n`
+      : ''
+
     userContent.push({
       type: 'text',
       text: `Trade: ${trade || 'general'}
 Region: ${region || 'Boston, MA'}
 Project Description: ${description || 'No additional description provided'}
-
+${measurementBlock}
 Please analyze this project and provide a detailed cost estimate for materials only.`,
     })
 

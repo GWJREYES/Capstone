@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Wand2, Download, RefreshCw, ChevronDown, Check, FileText } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import { Wand2, Download, RefreshCw, ChevronDown, Check, FileText, Ruler } from 'lucide-react'
 import DropZone from '@/components/estimator/DropZone'
 import LineItemsTable, { LineItem } from '@/components/estimator/LineItemsTable'
 import { TRADE_DEFAULTS, TAX_RATES, REGIONS } from '@/lib/constants'
@@ -17,6 +17,13 @@ const LOADING_STEPS = [
   'Calculating regional pricing...',
   'Building line item estimate...',
 ]
+
+interface Measurements {
+  length: string
+  width: string
+  height: string
+  pitch: string
+}
 
 interface EstimateResult {
   summary: string
@@ -47,6 +54,21 @@ export default function EstimatorPage() {
   const [error, setError] = useState<string | null>(null)
   const [savingQuote, setSavingQuote] = useState(false)
   const [savedQuote, setSavedQuote] = useState(false)
+  const [measurements, setMeasurements] = useState<Measurements>({ length: '', width: '', height: '', pitch: '' })
+
+  const measuredArea = useMemo(() => {
+    const l = parseFloat(measurements.length)
+    const w = parseFloat(measurements.width)
+    return !isNaN(l) && !isNaN(w) && l > 0 && w > 0 ? (l * w).toFixed(1) : null
+  }, [measurements.length, measurements.width])
+
+  const measuredPerimeter = useMemo(() => {
+    const l = parseFloat(measurements.length)
+    const w = parseFloat(measurements.width)
+    return !isNaN(l) && !isNaN(w) && l > 0 && w > 0 ? (2 * (l + w)).toFixed(1) : null
+  }, [measurements.length, measurements.width])
+
+  const hasMeasurements = measurements.length || measurements.width || measurements.height || measurements.pitch
 
   const currentState = region.split(', ')[1] || 'MA'
   const taxRate = TAX_RATES[currentState] || 0
@@ -99,6 +121,9 @@ export default function EstimatorPage() {
           description,
           trade,
           region,
+          measurements: hasMeasurements ? measurements : null,
+          measured_area: measuredArea,
+          measured_perimeter: measuredPerimeter,
         }),
       })
 
@@ -227,6 +252,53 @@ export default function EstimatorPage() {
                 preview={imagePreview}
                 onClear={() => { setImagePreview(null); setImageBase64(null) }}
               />
+            </div>
+
+            {/* LiDAR / Field Measurements */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <Ruler size={11} className="text-[#606070]" />
+                <label className="font-nav text-[10px] tracking-wider uppercase text-[#606070]">
+                  Field Measurements <span className="text-[#3a3a48] normal-case tracking-normal">(optional — use iPhone Measure app)</span>
+                </label>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { key: 'length', label: 'Length (ft)' },
+                  { key: 'width',  label: 'Width (ft)'  },
+                  { key: 'height', label: 'Height (ft)' },
+                  { key: 'pitch',  label: 'Pitch (e.g. 8/12)' },
+                ] as { key: keyof Measurements; label: string }[]).map(({ key, label }) => (
+                  <div key={key}>
+                    <label className="font-nav text-[9px] tracking-wide uppercase text-[#3a3a48] mb-0.5 block">{label}</label>
+                    <input
+                      type={key === 'pitch' ? 'text' : 'number'}
+                      min="0"
+                      step="0.1"
+                      value={measurements[key]}
+                      onChange={(e) => setMeasurements(prev => ({ ...prev, [key]: e.target.value }))}
+                      placeholder={key === 'pitch' ? '8/12' : '0'}
+                      className="w-full bg-[#151518] border border-[#2a2a32] rounded px-2 py-1.5 font-mono text-xs text-[#e8e8ee] placeholder-[#3a3a48] input-gold"
+                    />
+                  </div>
+                ))}
+              </div>
+              {(measuredArea || measuredPerimeter) && (
+                <div className="mt-2 flex gap-3 px-2 py-1.5 rounded bg-[#c8922a]/5 border border-[#c8922a]/15">
+                  {measuredArea && (
+                    <div>
+                      <span className="font-nav text-[9px] uppercase text-[#606070] tracking-wider">Area </span>
+                      <span className="font-mono text-xs text-[#e8aa40]">{measuredArea} sq ft</span>
+                    </div>
+                  )}
+                  {measuredPerimeter && (
+                    <div>
+                      <span className="font-nav text-[9px] uppercase text-[#606070] tracking-wider">Perimeter </span>
+                      <span className="font-mono text-xs text-[#e8aa40]">{measuredPerimeter} ln ft</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Description */}

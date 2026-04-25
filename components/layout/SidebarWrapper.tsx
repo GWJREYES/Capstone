@@ -12,7 +12,7 @@ export default function SidebarWrapper() {
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-30 p-2 rounded-md bg-[#151518] border border-[#2a2a32] text-[#9090a0] hover:text-[#e8e8ee] lg:hidden"
+        className="fixed top-4 left-4 z-30 p-2 rounded-md bg-[#0c1221] border border-[#1a2844] text-[#9090a0] hover:text-[#e8e8ee] lg:hidden"
       >
         <Menu size={18} />
       </button>

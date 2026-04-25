@@ -152,3 +152,109 @@ export interface AuditRecord {
   coaching_note?: string
   created_at: string
 }
+
+// ─── Subcontractor Operations Module ─────────────────────────────────────────
+
+export type SubApplicationStatus = 'pending' | 'approved' | 'rejected'
+
+export type PermitStatus =
+  | 'not_applied'
+  | 'pending'
+  | 'approved'
+  | 'active'
+  | 'inspection_due'
+  | 'closed'
+  | 'rejected'
+
+export type TimelineEventType =
+  | 'status_change'
+  | 'note'
+  | 'assignment'
+  | 'permit_update'
+  | 'daily_update'
+  | 'milestone'
+  | 'document'
+
+export interface SubApplication {
+  id: string
+  company: string
+  contact_name: string
+  trade: Trade
+  crew_size: number
+  license_number: string
+  license_expiry: string
+  hourly_rate: number
+  phone: string
+  email: string
+  city: string
+  state: string
+  bio: string
+  years_experience: number
+  insurance_carrier: string
+  insurance_policy: string
+  references_text: string
+  status: SubApplicationStatus
+  admin_note?: string
+  reviewed_by?: string
+  reviewed_at?: string
+  created_at: string
+}
+
+export interface Permit {
+  id: string
+  job_id: string
+  permit_number?: string
+  permit_type: string
+  status: PermitStatus
+  applied_date?: string
+  approved_date?: string
+  expiry_date?: string
+  fee?: number
+  issuing_authority?: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SubDailyUpdate {
+  id: string
+  job_id: string
+  subcontractor_id: string
+  subcontractor?: Subcontractor
+  update_date: string
+  crew_on_site: number
+  hours_worked: number
+  work_completed: string
+  work_planned?: string
+  blockers?: string
+  materials_needed?: string
+  weather?: string
+  completion_pct: number
+  created_at: string
+}
+
+export interface JobTimelineEvent {
+  id: string
+  job_id: string
+  event_type: TimelineEventType
+  from_status?: string | null
+  to_status?: string | null
+  description: string
+  actor: string
+  actor_type: 'admin' | 'subcontractor' | 'system'
+  metadata: Record<string, any>
+  created_at: string
+}
+
+export interface AppNotification {
+  id: string
+  type: string
+  title: string
+  body?: string
+  target_type: 'admin' | 'sub'
+  target_id?: string
+  reference_type?: string
+  reference_id?: string
+  read: boolean
+  created_at: string
+}

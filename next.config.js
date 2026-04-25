@@ -7,6 +7,8 @@ const nextConfig = {
     domains: ['*'],
     unoptimized: true,
   },
+  // Use 'standalone' output when building for Electron desktop packaging
+  output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
 }
 
 module.exports = nextConfig

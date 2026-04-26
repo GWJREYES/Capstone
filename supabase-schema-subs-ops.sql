@@ -157,6 +157,13 @@ CREATE INDEX IF NOT EXISTS idx_sub_availability_sub
 CREATE INDEX IF NOT EXISTS idx_sub_availability_date
   ON sub_availability(date);
 
+-- Archive support for subcontractors
+ALTER TABLE subcontractors ADD COLUMN IF NOT EXISTS archived boolean DEFAULT false;
+ALTER TABLE subcontractors ADD COLUMN IF NOT EXISTS archived_at timestamptz;
+
+CREATE INDEX IF NOT EXISTS idx_subcontractors_archived
+  ON subcontractors(archived);
+
 -- Sub work status on jobs (sub's perspective, separate from overall job status)
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS sub_status text DEFAULT 'not_started'
   CHECK (sub_status IN ('not_started','mobilizing','in_progress','punch_list','work_complete'));

@@ -137,3 +137,29 @@ CREATE INDEX IF NOT EXISTS idx_job_timeline_job
 
 CREATE INDEX IF NOT EXISTS idx_notifications_admin_unread
   ON notifications(target_type, read, created_at DESC);
+
+-- Sub availability calendar — one row per sub per day
+CREATE TABLE IF NOT EXISTS sub_availability (
+  id         uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
+  sub_id     uuid        NOT NULL REFERENCES subcontractors(id) ON DELETE CASCADE,
+  date       date        NOT NULL,
+  status     text        NOT NULL DEFAULT 'available'
+                         CHECK (status IN ('available', 'busy', 'unavailable')),
+  note       text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE (sub_id, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sub_availability_sub
+  ON sub_availability(sub_id, date);
+
+CREATE INDEX IF NOT EXISTS idx_sub_availability_date
+  ON sub_availability(date);
+
+-- Sub work status on jobs (sub's perspective, separate from overall job status)
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS sub_status text DEFAULT 'not_started'
+  CHECK (sub_status IN ('not_started','mobilizing','in_progress','punch_list','work_complete'));
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS sub_progress_pct int DEFAULT 0
+  CHECK (sub_progress_pct BETWEEN 0 AND 100);
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS sub_last_update timestamptz;

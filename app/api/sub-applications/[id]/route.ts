@@ -33,11 +33,39 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (body.status === 'approved' && data) {
       const { company, contact_name, trade, crew_size, license_number,
               license_expiry, hourly_rate, phone, email, city, state } = data
-      await supabase.from('subcontractors').insert([{
-        company, contact_name, trade, crew_size,
-        license_number, license_expiry, hourly_rate,
-        phone, email, city, state, status: 'available',
-      }])
+
+      // Check if sub already exists by email to avoid duplicates
+      const { data: existing } = await supabase
+        .from('subcontractors')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle()
+
+      if (!existing) {
+        const { error: insertError } = await supabase.from('subcontractors').insert([{
+          company, contact_name, trade,
+          crew_size: crew_size ?? 1,
+          license_number: license_number ?? null,
+          license_expiry: license_expiry ?? null,
+          hourly_rate: hourly_rate ?? null,
+          phone: phone ?? null,
+          email,
+          city: city ?? null,
+          state: state ? String(state).slice(0, 2) : null,
+          status: 'available',
+        }])
+        if (insertError) throw new Error(`Approved but failed to create sub record: ${insertError.message}`)
+      }
+
+      // Send Supabase Auth invite so the sub can set their password
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+      const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${appUrl}/sub-portal`,
+      })
+      // Non-fatal: sub may already have an auth account
+      if (inviteError && !inviteError.message.includes('already been registered')) {
+        console.error('Invite email failed:', inviteError.message)
+      }
     }
 
     return NextResponse.json(data)

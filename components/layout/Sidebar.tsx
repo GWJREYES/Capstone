@@ -61,12 +61,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const content = (
     <div className="flex flex-col h-full bg-[#0c1221] border-r border-[#1a2844] w-60">
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[#1a2844]">
+      <div className="flex items-center justify-center px-4 pt-6 pb-4 border-b border-[#1a2844] min-h-[73px]">
         {!logoError ? (
           <img
             src="/logo.png"
             alt="Capstone General Contracting"
-            className="h-16 w-auto"
+            className="h-16 w-auto object-contain mx-auto"
             onError={() => setLogoError(true)}
           />
         ) : (
@@ -81,7 +81,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </div>
         )}
         {onClose && (
-          <button onClick={onClose} className="text-[#606070] hover:text-[#e8e8ee] lg:hidden ml-2 flex-shrink-0">
+          <button onClick={onClose} className="text-[#606070] hover:text-[#e8e8ee] lg:hidden ml-2 flex-shrink-0 absolute right-4">
             <X size={18} />
           </button>
         )}

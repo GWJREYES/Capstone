@@ -3,16 +3,18 @@ import { getServiceClient } from '@/lib/supabase'
 import { MOCK_SUBS } from '@/lib/constants'
 
 export async function GET(req: NextRequest) {
+  const archived = req.nextUrl.searchParams.get('archived') === 'true'
   try {
     const supabase = getServiceClient()
     const { data, error } = await supabase
       .from('subcontractors')
       .select('*')
+      .eq('archived', archived)
       .order('company')
     if (error) throw error
     return NextResponse.json({ data })
   } catch {
-    return NextResponse.json({ data: MOCK_SUBS })
+    return NextResponse.json({ data: archived ? [] : MOCK_SUBS })
   }
 }
 

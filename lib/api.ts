@@ -101,36 +101,53 @@ export async function deleteJob(id: string) {
 // ─── Subcontractors ──────────────────────────────────────────────────────────
 
 export async function fetchSubs() {
-  const supabase = getClient()
-  const { data, error } = await supabase
-    .from('subcontractors')
-    .select('*')
-    .order('company')
-  if (error) throw error
-  return data || []
+  const res = await fetch('/api/subs')
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.data ?? [])
+}
+
+export async function fetchArchivedSubs() {
+  const res = await fetch('/api/subs?archived=true')
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.data ?? [])
 }
 
 export async function createSub(body: Record<string, any>) {
-  const supabase = getClient()
-  const { data, error } = await supabase
-    .from('subcontractors')
-    .insert([body])
-    .select()
-    .single()
-  if (error) throw error
-  return data
+  const res = await fetch('/api/subs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error || 'Failed to create subcontractor')
+  return json.data ?? json
 }
 
 export async function updateSub(id: string, body: Record<string, any>) {
-  const supabase = getClient()
-  const { data, error } = await supabase
-    .from('subcontractors')
-    .update(body)
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw error
-  return data
+  const res = await fetch(`/api/subs/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error || 'Failed to update subcontractor')
+  return json.data ?? json
+}
+
+export async function archiveSub(id: string) {
+  return updateSub(id, { archived: true, archived_at: new Date().toISOString() })
+}
+
+export async function unarchiveSub(id: string) {
+  return updateSub(id, { archived: false, archived_at: null })
+}
+
+export async function deleteSub(id: string) {
+  const res = await fetch(`/api/subs/${id}`, { method: 'DELETE' })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.error || 'Failed to delete subcontractor')
+  }
 }
 
 // ─── Customers ───────────────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import { fetchNotifications, markNotificationRead, markAllNotificationsRead } fr
 
 const TYPE_DOT: Record<string, string> = {
   new_application: 'bg-[#c8922a]',
+  work_complete:   'bg-[#3eb85a]',
   daily_update:    'bg-[#3eb85a]',
   permit_update:   'bg-[#d4880a]',
   status_change:   'bg-[#4a9de0]',

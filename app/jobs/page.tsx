@@ -184,9 +184,30 @@ export default function JobsPage() {
                   </td>
                   <td className="px-4 py-3.5"><StatusPill type="trade" value={job.trade} /></td>
                   <td className="px-4 py-3.5 hidden md:table-cell">
-                    <span className="font-body text-sm text-[#9090a0]">
-                      {job.subcontractor?.company || job.subcontractor_name || <span className="text-[#606070] italic">Unassigned</span>}
-                    </span>
+                    {job.subcontractor?.company || job.subcontractor_name ? (
+                      <div>
+                        <p className="font-body text-sm text-[#9090a0]">{job.subcontractor?.company || job.subcontractor_name}</p>
+                        {job.sub_status && job.sub_status !== 'not_started' && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`font-nav text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border ${
+                              job.sub_status === 'work_complete'
+                                ? 'text-[#3eb85a] bg-[#3eb85a]/10 border-[#3eb85a]/30'
+                                : 'text-[#d4880a] bg-[#d4880a]/10 border-[#d4880a]/30'
+                            }`}>{job.sub_status.replace(/_/g, ' ')}</span>
+                            {job.sub_progress_pct > 0 && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-16 h-1 bg-[#2a2a32] rounded-full overflow-hidden">
+                                  <div className="h-full bg-[#c8922a] rounded-full" style={{ width: `${job.sub_progress_pct}%` }} />
+                                </div>
+                                <span className="font-mono text-[10px] text-[#606070]">{job.sub_progress_pct}%</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="font-body text-sm text-[#606070] italic">Unassigned</span>
+                    )}
                   </td>
                   <td className="px-4 py-3.5"><StatusPill type="status" value={job.status} /></td>
                   <td className="px-4 py-3.5 text-right hidden sm:table-cell">

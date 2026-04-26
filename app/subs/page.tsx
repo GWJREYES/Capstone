@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, AlertTriangle, RefreshCw, X, Archive, ArchiveRestore, Trash2 } from 'lucide-react'
+import { Plus, AlertTriangle, RefreshCw, X, Archive, ArchiveRestore, Trash2, List, CalendarDays } from 'lucide-react'
 import StatusPill from '@/components/ui/StatusPill'
 import { fetchSubs, fetchArchivedSubs, createSub, updateSub, archiveSub, unarchiveSub, deleteSub } from '@/lib/api'
+import AvailabilityCalendar from '@/components/subs/AvailabilityCalendar'
 
 const DOT: Record<string, string> = { available: '#3eb85a', busy: '#d4880a', unavailable: '#606070' }
 const TRADES = ['foundation','roofing','remodel','kitchen','concrete','framing','windows','siding','exterior','hvac','plumbing','electrical']
@@ -28,6 +29,7 @@ export default function SubsPage() {
   const [form, setForm]         = useState<Record<string, any>>(BLANK)
   const [editId, setEditId]     = useState<string | null>(null)
   const [viewArchived, setViewArchived] = useState(false)
+  const [view, setView]                 = useState<'list' | 'calendar'>('list')
   const [actionError, setActionError]   = useState<string | null>(null)
   const [confirming, setConfirming]     = useState<'archive' | 'delete' | null>(null)
 
@@ -128,7 +130,20 @@ export default function SubsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => { setViewArchived(!viewArchived); setFilter('all') }}
+            {/* List / Calendar toggle */}
+            {!viewArchived && (
+              <div className="flex items-center border border-[#2a2a32] rounded-md overflow-hidden">
+                <button onClick={() => setView('list')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 font-nav text-xs transition-colors ${view === 'list' ? 'bg-[#c8922a] text-[#09090b]' : 'text-[#606070] hover:text-[#e8e8ee]'}`}>
+                  <List size={13} />List
+                </button>
+                <button onClick={() => setView('calendar')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 font-nav text-xs transition-colors ${view === 'calendar' ? 'bg-[#c8922a] text-[#09090b]' : 'text-[#606070] hover:text-[#e8e8ee]'}`}>
+                  <CalendarDays size={13} />Calendar
+                </button>
+              </div>
+            )}
+            <button onClick={() => { setViewArchived(!viewArchived); setFilter('all'); setView('list') }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-nav text-xs font-semibold transition-colors border ${
                 viewArchived
                   ? 'bg-[#c8922a]/10 border-[#c8922a]/30 text-[#c8922a]'
@@ -139,7 +154,7 @@ export default function SubsPage() {
             <button onClick={load} disabled={loading} className="p-2 rounded-md text-[#606070] hover:text-[#e8e8ee] hover:bg-[#151518]">
               <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             </button>
-            {!viewArchived && (
+            {!viewArchived && view === 'list' && (
               <button onClick={() => { setForm(BLANK); setEditId(null); setConfirming(null); setActionError(null); setShowNew(true) }}
                 className="flex items-center gap-2 px-4 py-2 bg-[#c8922a] hover:bg-[#e8aa40] rounded-md font-nav text-sm font-semibold text-[#09090b] transition-colors">
                 <Plus size={16} /><span className="hidden sm:inline">Add Sub</span>
@@ -149,7 +164,11 @@ export default function SubsPage() {
         </div>
       </div>
 
-      {!viewArchived && (
+      {!viewArchived && view === 'calendar' && (
+        <AvailabilityCalendar subs={subs} />
+      )}
+
+      {!viewArchived && view === 'list' && (
         <div className="px-6 py-3 border-b border-[#2a2a32] flex gap-2">
           {(['all','available','busy','unavailable'] as const).map((s) => (
             <button key={s} onClick={() => setFilter(s)}
@@ -163,7 +182,7 @@ export default function SubsPage() {
         </div>
       )}
 
-      {loading ? (
+      {!viewArchived && view === 'calendar' ? null : loading ? (
         <div className="p-6 space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-[#151518] rounded animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
         <div className="p-12 text-center">

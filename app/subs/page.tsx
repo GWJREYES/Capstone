@@ -126,7 +126,7 @@ export default function SubsPage() {
             <p className="font-nav text-sm text-[#606070] mt-0.5">
               {viewArchived
                 ? `${subs.length} archived`
-                : `${subs.length} contractors · ${subs.filter((s) => s.status === 'available').length} available`}
+                : `${subs.length} contractors · ${subs.filter((s) => s.status === 'available').length} active`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -176,7 +176,7 @@ export default function SubsPage() {
                 filter === s ? 'bg-[#c8922a] text-[#09090b]' : 'bg-[#151518] border border-[#2a2a32] text-[#9090a0] hover:text-[#e8e8ee]'
               }`}>
               {s !== 'all' && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: DOT[s] }} />}
-              {s === 'all' ? 'All' : s}
+              {s === 'all' ? 'All' : s === 'available' ? 'Active' : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
         </div>
@@ -220,7 +220,7 @@ export default function SubsPage() {
                     <td className="px-4 py-3.5">
                       {viewArchived
                         ? <span className="font-nav text-xs text-[#606070]">Archived</span>
-                        : <span className="font-nav text-xs font-semibold capitalize" style={{ color: DOT[sub.status] }}>{sub.status}</span>}
+                        : <span className="font-nav text-xs font-semibold capitalize" style={{ color: DOT[sub.status] }}>{sub.status === 'available' ? 'Active' : sub.status}</span>}
                     </td>
                     <td className="px-4 py-3.5 text-right hidden sm:table-cell">
                       <span className="font-mono text-sm text-[#9090a0]">{sub.crew_size}</span>
@@ -298,7 +298,7 @@ export default function SubsPage() {
                     <label className="font-nav text-[10px] tracking-wider uppercase text-[#606070] mb-1 block">Status</label>
                     <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
                       className="w-full bg-[#0f0f12] border border-[#2a2a32] rounded px-3 py-2 font-nav text-sm text-[#e8e8ee] input-gold">
-                      <option value="available">Available</option>
+                      <option value="available">Active</option>
                       <option value="busy">Busy</option>
                       <option value="unavailable">Unavailable</option>
                     </select>
